@@ -1,94 +1,85 @@
-# MCP Server Documentation Generator
+# Technical Documentation Generator Chatbot
 
-This tool automatically generates technical documentation for an MCP server by analyzing a user's codebase and leveraging an LLM API (OpenAI's GPT-4 by default).
+This chatbot helps users generate comprehensive technical documentation for their projects following the Windsurf Meta-Workflow methodology. It leverages an LLM (Language Learning Model) to create structured documentation that follows industry best practices.
 
 ## Features
 
-- Analyzes codebases with support for multiple programming languages
-- Generates comprehensive documentation with markdown formatting
-- Creates separate documentation files for different sections
-- Builds an index file for easy navigation
-- Configurable input and output directories
-- Configuration via .env file
+- Interactive chat interface to describe your project
+- Generates various types of technical documentation:
+  - Project Overview
+  - Feature Specifications
+  - Requirements Documentation
+  - Tech Stack Documentation
+  - Dependencies Documentation
+  - User Flows
+  - Implementation Standards
+  - Project Structure
+- Saves generated documentation to the output-docs directory
+- Follows the Windsurf Meta-Workflow methodology
+- Built-in document templates with proper structure
+- Maintains version history and memory context
 
 ## Installation
 
-1. Clone this repository
-2. Install the required dependencies:
+1. Clone the repository
+2. Navigate to the chatbot directory
+3. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
-3. Set up your environment variables:
+4. Copy `.env.example` to `.env` and set your OpenAI API key:
 
 ```bash
 cp .env.example .env
 ```
 
-Then edit the `.env` file to add your OpenAI API key and other configuration options.
+5. Edit the `.env` file and replace `your_openai_api_key_here` with your actual OpenAI API key
 
 ## Usage
 
-### Setting up the API Key
-
-Add your OpenAI API key to the `.env` file:
-
-```
-OPENAI_API_KEY=your-api-key-here
-```
-
-You can also configure the model and API URL in the same file:
-
-```
-MODEL_NAME=gpt-4.1-nano
-LLM_API_URL=https://api.openai.com/v1/chat/completions
-```
-
-### Running the Tool
-
-Basic usage with default paths:
+1. Start the server:
 
 ```bash
-python documentation_generator.py
+npm start
 ```
 
-This will analyze the codebase at `/Users/jaidesai/mcp-ship-it/demo-codebase` and generate documentation in `/Users/jaidesai/mcp-ship-it/technical-docs`.
-
-Custom paths:
+For development with auto-restart:
 
 ```bash
-python documentation_generator.py --codebase /path/to/your/codebase --output /path/to/output
+npm run dev
 ```
 
-## Documentation Output
+2. Open your browser and navigate to `http://localhost:3000`
 
-The tool generates:
+3. Enter your project details in the sidebar:
+   - Project Name
+   - Document Type
 
-1. Multiple markdown (.md) files, each containing a different section of the documentation
-2. An index.md file that links to all the sections
+4. Chat with the AI to describe your project
 
-The documentation covers:
-- Architecture Overview
-- Components
-- API Documentation
-- Data Flow
-- Deployment Guide
-- Configuration Options
-- Security Considerations
+5. The AI will generate documentation based on your input
 
-## Customization
+6. Save the documentation when ready
 
-You can modify the `SUPPORTED_FILE_EXTENSIONS` list in the script to include or exclude specific file types from the analysis.
+## Documentation Structure
 
-## Troubleshooting
+The generated documentation follows a structured format based on the Windsurf Meta-Workflow methodology, including:
 
-If you encounter any issues, check the log output for detailed error messages. Common issues include:
+- **Memory Context**: Shows relationships with other documents
+- **Version History**: Tracks document versions and updates
+- **Document Content**: Following the specific template for the document type
+- **Self-Critique**: Documents the review and improvement process
 
-- Missing API key: Ensure the OPENAI_API_KEY environment variable is set
-- API rate limits: If you hit rate limits, try again later or adjust the code to include backoff/retry logic
-- Large codebases: For very large codebases, consider analyzing only specific directories to stay within token limits
+## Dependencies
+
+- Express.js - Web server framework
+- OpenAI API - LLM integration
+- Bootstrap - Frontend styling
+- Marked - Markdown parsing
+- Dotenv - Environment variable management
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is private and not licensed for public use. 

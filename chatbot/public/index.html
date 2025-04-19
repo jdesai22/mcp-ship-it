@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Documentation Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar for project details -->
+            <div class="col-md-3 sidebar">
+                <div class="sidebar-content">
+                    <h3>Technical Documentation Generator</h3>
+                    <hr>
+                    <div class="project-details mb-4">
+                        <h5>Project Details</h5>
+                        <div class="mb-3">
+                            <label for="projectName" class="form-label">Project Name</label>
+                            <input type="text" class="form-control" id="projectName" placeholder="Enter project name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentType" class="form-label">Document Type</label>
+                            <select class="form-select" id="documentType">
+                                <option value="" selected>Select document type</option>
+                                <!-- Will be populated from API -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="saved-docs mb-4">
+                        <h5>Saved Documents</h5>
+                        <div id="savedDocsList" class="list-group">
+                            <!-- Will be populated with saved documents -->
+                            <div class="text-muted small">No documents saved yet</div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-tips">
+                        <h5>Documentation Tips</h5>
+                        <ul class="small">
+                            <li>Be specific about your project goals and features</li>
+                            <li>Provide context about your tech stack and dependencies</li>
+                            <li>Describe your target audience and use cases</li>
+                            <li>Mention any specific standards or methodologies</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main chat area -->
+            <div class="col-md-9 chat-container">
+                <div class="chat-header">
+                    <h4 id="currentDocument">Technical Documentation Chat</h4>
+                    <div class="actions">
+                        <button id="saveDocument" class="btn btn-success btn-sm" disabled>
+                            <i class="bi bi-file-earmark-check"></i> Save Document
+                        </button>
+                        <button id="clearChat" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-trash"></i> Clear Chat
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chatMessages" class="chat-messages">
+                    <div class="message system-message">
+                        <div class="message-content">
+                            <p>Welcome to the Technical Documentation Generator! I'll help you create detailed documentation for your project following the Windsurf Meta-Workflow methodology.</p>
+                            <p>To get started:</p>
+                            <ol>
+                                <li>Enter your project name in the sidebar</li>
+                                <li>Select the type of document you want to create</li>
+                                <li>Describe your project and requirements</li>
+                            </ol>
+                            <p>What type of project are you working on?</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-group">
+                        <textarea id="userMessage" class="form-control" placeholder="Describe your project or ask a question..." rows="2"></textarea>
+                        <button id="sendMessage" class="btn btn-primary">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingOverlay" class="d-none">
+        <div class="spinner-container">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-light mt-2">Generating documentation...</p>
+        </div>
+    </div>
+    
+    <!-- Success toast notification -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="documentSavedToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Document saved successfully!
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
