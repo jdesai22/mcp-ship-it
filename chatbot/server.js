@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const OpenAI = require('openai');
 const path = require('path');
 const fs = require('fs');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 require('dotenv').config();
 
 const app = express();
@@ -87,6 +88,80 @@ app.get('/api/documents', (req, res) => {
   } catch (error) {
     console.error('Error fetching documents:', error);
     res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+// New API endpoint to upload project documents to MCP server
+app.post('/api/upload-to-mcp', async (req, res) => {
+  try {
+    const { projectName } = req.body;
+    
+    if (!projectName) {
+      return res.status(400).json({ error: 'Project name is required' });
+    }
+    
+    const projectPath = path.join(outputDir, projectName);
+    
+    // Check if project directory exists
+    if (!fs.existsSync(projectPath)) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    const uploadResults = [];
+    const failedUploads = [];
+    
+    // Get all markdown files in the project directory
+    const files = fs.readdirSync(projectPath);
+    const markdownFiles = files.filter(file => file.endsWith('.md'));
+    
+    // MCP server URL (from environment or default)
+    const mcpUrl = process.env.MCP_URL || "http://localhost:3000/context";
+    
+    // Upload each file
+    for (const fileName of markdownFiles) {
+      try {
+        const filePath = path.join(projectPath, fileName);
+        const content = fs.readFileSync(filePath, 'utf8');
+        
+        // Format payload for MCP server
+        const payload = {
+          id: fileName,
+          type: "text/markdown",
+          content: content,
+          created_at: new Date().toISOString()
+        };
+        
+        // Send to MCP server
+        const response = await fetch(mcpUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+          uploadResults.push({ fileName, success: true });
+        } else {
+          const errorText = await response.text();
+          failedUploads.push({ fileName, status: response.status, error: errorText });
+        }
+      } catch (error) {
+        failedUploads.push({ fileName, error: error.message });
+      }
+    }
+    
+    res.json({
+      success: failedUploads.length === 0,
+      uploaded: uploadResults,
+      failed: failedUploads,
+      totalUploaded: uploadResults.length,
+      totalFailed: failedUploads.length,
+      totalFiles: markdownFiles.length
+    });
+  } catch (error) {
+    console.error('Error uploading to MCP:', error);
+    res.status(500).json({ error: 'Failed to upload documents to MCP server' });
   }
 });
 

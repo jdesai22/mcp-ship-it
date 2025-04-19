@@ -205,6 +205,15 @@
                             <div class="category-header" id="projectDocumentsHeader">
                                 Project Documents
                             </div>
+                            <div class="d-flex justify-content-end mb-3">
+                                <button id="uploadToMcpBtn" class="btn btn-primary btn-sm me-2">
+                                    <i class="bi bi-cloud-upload"></i> Upload to MCP Server
+                                </button>
+                                <button id="backToList" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left"></i> Back to Projects
+                                </button>
+                            </div>
+                            <div id="uploadStatusAlert" class="alert d-none mb-3"></div>
                             <div class="row row-cols-1 row-cols-md-3 g-4" id="projectDocumentsList">
                                 <!-- Will be populated via JavaScript -->
                             </div>
@@ -214,7 +223,7 @@
                         <div id="documentPreview" class="d-none">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 id="previewTitle">Document Title</h5>
-                                <button id="backToList" class="btn btn-outline-secondary btn-sm">
+                                <button id="backToDocumentList" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-arrow-left"></i> Back to Project
                                 </button>
                             </div>

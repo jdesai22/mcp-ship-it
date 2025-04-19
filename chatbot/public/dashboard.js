@@ -21,9 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const breadcrumbHome = document.getElementById('breadcrumbHome');
     const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
     const backToListBtn = document.getElementById('backToList');
+    const backToDocumentListBtn = document.getElementById('backToDocumentList');
     const refreshButton = document.getElementById('refreshButton');
     const exportDocumentBtn = document.getElementById('exportDocument');
     const editDocumentBtn = document.getElementById('editDocument');
+    const uploadToMcpBtn = document.getElementById('uploadToMcpBtn');
+    const uploadStatusAlert = document.getElementById('uploadStatusAlert');
     
     // State variables
     let allDocuments = [];
@@ -39,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     projectSearchInput.addEventListener('input', filterProjects);
     refreshButton.addEventListener('click', loadDocuments);
     backToListBtn.addEventListener('click', backToProjectView);
+    backToDocumentListBtn.addEventListener('click', backToProjectView);
     breadcrumbHome.addEventListener('click', function(e) {
         e.preventDefault();
         showProjectsView();
@@ -56,6 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentDocument) {
             // This would ideally open the chat interface with context about this document
             window.location.href = 'index.html';
+        }
+    });
+    
+    // Upload to MCP functionality
+    uploadToMcpBtn.addEventListener('click', function() {
+        if (currentProject) {
+            uploadProjectToMcp(currentProject.name);
         }
     });
     
@@ -612,5 +623,59 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide loading overlay
     function hideLoading() {
         loadingOverlay.classList.add('d-none');
+    }
+    
+    // Upload project documents to MCP server
+    function uploadProjectToMcp(projectName) {
+        showLoading();
+        
+        // Clear previous upload status
+        hideUploadStatus();
+        
+        fetch('/api/upload-to-mcp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ projectName })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoading();
+            
+            if (data.success) {
+                showUploadStatus('success', `Successfully uploaded ${data.totalUploaded} documents to MCP server.`);
+            } else if (data.totalUploaded > 0 && data.totalFailed > 0) {
+                showUploadStatus('warning', `Partially successful. Uploaded ${data.totalUploaded} documents, but failed to upload ${data.totalFailed} documents.`);
+            } else {
+                showUploadStatus('danger', `Failed to upload documents. ${data.totalFailed} documents could not be uploaded.`);
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading to MCP:', error);
+            hideLoading();
+            showUploadStatus('danger', 'Error uploading to MCP server. Please check the console for details.');
+        });
+    }
+    
+    // Show upload status alert
+    function showUploadStatus(type, message) {
+        uploadStatusAlert.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
+        uploadStatusAlert.classList.add(`alert-${type}`);
+        uploadStatusAlert.innerHTML = `
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'warning' ? 'bi-exclamation-triangle' : 'bi-x-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close float-end" aria-label="Close" onclick="this.parentElement.classList.add('d-none')"></button>
+        `;
+    }
+    
+    // Hide upload status alert
+    function hideUploadStatus() {
+        uploadStatusAlert.classList.add('d-none');
     }
 }); 
