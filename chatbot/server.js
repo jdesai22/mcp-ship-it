@@ -25,6 +25,9 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
+// Serve files from output-docs directory
+app.use('/output-docs', express.static(outputDir));
+
 // Load templates
 const loadTemplate = (templateName) => {
   try {
@@ -74,6 +77,39 @@ const saveDocumentation = (projectPath, filename, content) => {
   fs.writeFileSync(filePath, content);
   return filePath;
 };
+
+// New API endpoint to get available documents
+app.get('/api/documents', (req, res) => {
+  try {
+    const files = fs.readdirSync(outputDir);
+    const documents = files
+      .filter(file => file.endsWith('.md'))
+      .map(file => {
+        // Parse filename to extract metadata
+        // Format: docType-projectName-timestamp.md
+        const parts = file.split('-');
+        const timestamp = parts.pop().replace('.md', '');
+        const docType = parts[0];
+        // Everything between docType and timestamp is the project name
+        const projectName = parts.slice(1, -1).join('-');
+        
+        return {
+          id: file.replace('.md', ''),
+          fileName: file,
+          documentType: docType,
+          projectName: projectName,
+          createdAt: new Date(timestamp.replace(/T|-/g, match => match === 'T' ? ' ' : match === '-' ? ':' : '/')).toISOString(),
+          // Content will be loaded when a specific document is requested
+          content: null
+        };
+      });
+    
+    res.json(documents);
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
 
 // Handle chat endpoint
 app.post('/api/chat', async (req, res) => {
