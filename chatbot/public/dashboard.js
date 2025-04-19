@@ -236,6 +236,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update header
         viewHeaderElement.textContent = 'Documentation Dashboard';
         
+        // Close all document lists
+        document.querySelectorAll('.project-documents').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Reset all toggle icons
+        document.querySelectorAll('.toggle-icon').forEach(icon => {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-right');
+        });
+        
         // Render projects
         renderProjects();
         renderProjectsSidebar(projects);
@@ -262,21 +273,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Render project documents
         renderProjectDocuments(project);
         
-        // Highlight current project in sidebar
-        highlightProject(project.name);
+        // Display document list for current project in sidebar
+        expandProjectInSidebar(project.name);
     }
     
-    // Highlight the current project in the sidebar
-    function highlightProject(projectName) {
-        // Remove active class from all project items
-        document.querySelectorAll('.project-list-item').forEach(item => {
-            item.classList.remove('active');
+    // Expand project document list in sidebar
+    function expandProjectInSidebar(projectName) {
+        // Close all document lists
+        document.querySelectorAll('.project-documents').forEach(el => {
+            el.style.display = 'none';
         });
         
-        // Add active class to current project
+        // Reset all toggle icons
+        document.querySelectorAll('.toggle-icon').forEach(icon => {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-right');
+        });
+        
+        // Expand the current project's document list
         const projectItem = document.querySelector(`.project-list-item[data-project="${projectName}"]`);
         if (projectItem) {
-            projectItem.classList.add('active');
+            const documentsContainer = projectItem.querySelector('.project-documents');
+            if (documentsContainer) {
+                documentsContainer.style.display = 'block';
+                
+                // Update the toggle icon
+                const toggleIcon = projectItem.querySelector('.toggle-icon');
+                if (toggleIcon) {
+                    toggleIcon.classList.remove('bi-chevron-right');
+                    toggleIcon.classList.add('bi-chevron-down');
+                }
+            }
         }
     }
     
@@ -312,24 +339,112 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Render each project in the sidebar
+        // Render each project in the sidebar as a collapsible item
         projectsToRender.forEach(project => {
-            const item = document.createElement('div');
-            item.className = 'project-list-item';
-            if (currentProject && currentProject.name === project.name) {
-                item.classList.add('active');
-            }
-            item.setAttribute('data-project', project.name);
+            const projectItem = document.createElement('div');
+            projectItem.className = 'project-list-item';
+            projectItem.setAttribute('data-project', project.name);
             
-            item.innerHTML = `
-                <i class="bi bi-folder project-icon"></i>
-                <span class="flex-grow-1">${project.name}</span>
-                <span class="badge bg-secondary">${project.documents.length}</span>
+            // Add expand/collapse control
+            const collapseId = `collapse-${project.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            
+            projectItem.innerHTML = `
+                <div class="d-flex align-items-center w-100 project-header">
+                    <i class="bi bi-chevron-right me-1 toggle-icon"></i>
+                    <i class="bi bi-folder project-icon"></i>
+                    <span class="flex-grow-1 project-name">${project.name}</span>
+                    <span class="badge bg-secondary">${project.documents.length}</span>
+                </div>
+                <div class="project-documents" id="${collapseId}" style="display: none;">
+                    <!-- Documents will be inserted here -->
+                </div>
             `;
             
-            item.addEventListener('click', () => showProjectDocuments(project));
+            // Add project click event
+            const projectHeader = projectItem.querySelector('.project-header');
+            projectHeader.addEventListener('click', (e) => {
+                // First close all other document lists
+                document.querySelectorAll('.project-documents').forEach(el => {
+                    if (el.id !== collapseId) {
+                        el.style.display = 'none';
+                    }
+                });
+                
+                // Reset all toggle icons
+                document.querySelectorAll('.toggle-icon').forEach(icon => {
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-right');
+                });
+                
+                // Toggle the clicked project's document list
+                const documentsContainer = projectItem.querySelector('.project-documents');
+                const toggleIcon = projectItem.querySelector('.toggle-icon');
+                
+                if (documentsContainer.style.display === 'none') {
+                    documentsContainer.style.display = 'block';
+                    toggleIcon.classList.remove('bi-chevron-right');
+                    toggleIcon.classList.add('bi-chevron-down');
+                } else {
+                    documentsContainer.style.display = 'none';
+                    toggleIcon.classList.remove('bi-chevron-down');
+                    toggleIcon.classList.add('bi-chevron-right');
+                }
+                
+                // Show the project documents in the main area
+                showProjectDocuments(project);
+            });
             
-            projectsList.appendChild(item);
+            // Add the project item to the sidebar
+            projectsList.appendChild(projectItem);
+            
+            // Add document items to the collapsible section
+            const documentsContainer = projectItem.querySelector('.project-documents');
+            
+            // Group documents by type
+            const docsByType = {};
+            project.documents.forEach(doc => {
+                if (!docsByType[doc.documentType]) {
+                    docsByType[doc.documentType] = [];
+                }
+                docsByType[doc.documentType].push(doc);
+            });
+            
+            // Add documents grouped by type
+            Object.keys(docsByType).sort().forEach(docType => {
+                // For each document type, sort by createdAt (newest first)
+                const docs = docsByType[docType].sort((a, b) => 
+                    new Date(b.createdAt) - new Date(a.createdAt)
+                );
+                
+                docs.forEach(doc => {
+                    const docItem = document.createElement('div');
+                    docItem.className = 'document-list-item';
+                    
+                    // Get just the filename without path
+                    const fileName = doc.fileName.split('/').pop();
+                    
+                    docItem.innerHTML = `
+                        <i class="bi bi-file-text document-icon"></i>
+                        <span class="document-name">${fileName}</span>
+                    `;
+                    
+                    // Add document click event
+                    docItem.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent triggering project click
+                        viewDocument(doc.id);
+                    });
+                    
+                    documentsContainer.appendChild(docItem);
+                });
+            });
+            
+            // If this is the current project, show its document list
+            if (currentProject && currentProject.name === project.name) {
+                documentsContainer.style.display = 'block';
+                const toggleIcon = projectItem.querySelector('.toggle-icon');
+                toggleIcon.classList.remove('bi-chevron-right');
+                toggleIcon.classList.add('bi-chevron-down');
+            }
         });
     }
     
@@ -514,6 +629,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentDocument = doc;
         currentView = 'document-preview';
+        
+        // Make sure the parent project is expanded in the sidebar
+        if (doc.folder) {
+            expandProjectInSidebar(doc.folder);
+        }
         
         // Fetch document content
         fetch(`/output-docs/${doc.fileName}`)
