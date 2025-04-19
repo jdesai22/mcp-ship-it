@@ -1,0 +1,1 @@
+dashboard to visualize mcp docs
