@@ -161,6 +161,65 @@ textarea.form-control {
     border-left-color: var(--primary-color);
 }
 
+/* Project Modal */
+#projectDocsModal .list-group-item {
+    transition: all 0.2s ease;
+}
+
+#projectDocsModal .list-group-item:hover {
+    background-color: var(--hover-color);
+}
+
+#projectTitle {
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+/* Generate All Button styles */
+#generateAllDocs {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transition: all 0.3s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#generateAllDocs:hover:not(:disabled) {
+    background-color: #27ae60;
+    border-color: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#generateAllDocs:disabled {
+    background-color: #a8d5ba;
+    border-color: #a8d5ba;
+    cursor: not-allowed;
+}
+
+#generateAllDocs:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Divider styles */
+.text-muted.small {
+    display: block;
+    text-align: center;
+    position: relative;
+}
+
+.text-muted.small::before,
+.text-muted.small::after {
+    content: "";
+    display: inline-block;
+    width: 40%;
+    height: 1px;
+    background-color: var(--border-color);
+    vertical-align: middle;
+    margin: 0 10px;
+}
+
 /* Markdown content styling */
 .markdown-content h1,
 .markdown-content h2,
