@@ -256,4 +256,74 @@ textarea.form-control {
 .markdown-content th {
     background-color: #f2f2f2;
     text-align: left;
+}
+
+/* File directory sidebar styles */
+.project-list-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+.project-list-item:hover {
+    background-color: rgba(0,0,0,0.03);
+}
+
+.project-list-item .project-icon {
+    margin-right: 8px;
+    color: #0d6efd;
+}
+
+.project-list-item .project-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-list-item .toggle-icon {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.project-documents {
+    margin-left: 20px;
+    padding-top: 5px;
+}
+
+.document-list-item {
+    padding: 6px 8px;
+    margin: 2px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.document-list-item:hover {
+    background-color: rgba(0,0,0,0.05);
+    color: #0d6efd;
+}
+
+.document-list-item:hover .document-icon {
+    color: #0d6efd;
+}
+
+.document-list-item .document-icon {
+    margin-right: 8px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.document-list-item .document-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Remove the document active styles */
+.document-list-item .document-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 } 
