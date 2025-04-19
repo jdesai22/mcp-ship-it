@@ -2,8 +2,8 @@ import os
 import requests
 from datetime import datetime
 
-MCP_URL = "http://localhost:3000/context"
-DOCS_DIR = "technical-docs"
+MCP_URL = "http://localhost:8000/context"
+DOCS_DIR = "output-docs/nba-betting"
 
 def get_format(filename):
     ext = filename.split('.')[-1].lower()

@@ -115,7 +115,7 @@ app.post('/api/upload-to-mcp', async (req, res) => {
     const markdownFiles = files.filter(file => file.endsWith('.md'));
     
     // MCP server URL (from environment or default)
-    const mcpUrl = process.env.MCP_URL || "http://localhost:3000/context";
+    const mcpUrl = process.env.MCP_URL || "http://localhost:8000/context";
     
     // Upload each file
     for (const fileName of markdownFiles) {
@@ -123,7 +123,7 @@ app.post('/api/upload-to-mcp', async (req, res) => {
         const filePath = path.join(projectPath, fileName);
         const content = fs.readFileSync(filePath, 'utf8');
         
-        // Format payload for MCP server
+        // Format payload for MCP server according to MCP spec in node-mcp-server
         const payload = {
           id: fileName,
           type: "text/markdown",
