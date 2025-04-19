@@ -1,0 +1,380 @@
+REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
+
+## Workflow Diagrams
+
+### Initialization Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> checkMemoryBankExists{checkMemoryBankExists}
+
+    checkMemoryBankExists -->|No| createMemoryBankDirectory[createMemoryBankDirectory]
+    createMemoryBankDirectory --> scaffoldMemoryBankStructure[scaffoldMemoryBankStructure]
+    scaffoldMemoryBankStructure --> populateMemoryBankFiles[populateMemoryBankFiles]
+    populateMemoryBankFiles --> readMemoryBank[readMemoryBank]
+
+    checkMemoryBankExists -->|Yes| readMemoryBank
+
+    readMemoryBank --> verifyFilesComplete{verifyFilesComplete}
+
+    verifyFilesComplete -->|No| createMissingFiles[createMissingFiles]
+    createMissingFiles --> verifyContext[verifyContext]
+
+    verifyFilesComplete -->|Yes| verifyContext
+
+    verifyContext --> developStrategy[developStrategy]
+```
+
+### Documentation Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> checkDocumentationExists{checkDocumentationExists}
+    checkDocumentationExists -->|No| scaffoldDocumentationStructure[scaffoldDocumentationStructure]
+    checkDocumentationExists -->|Yes| generateDocumentation[generateDocumentation]
+    scaffoldDocumentationStructure --> generateDocumentation
+    generateDocumentation --> selfEvaluateDocumentation[selfEvaluateDocumentation]
+    selfEvaluateDocumentation --> reviewDocumentation[reviewDocumentation]
+    reviewDocumentation -->|Score < 4| reviseDocumentation[reviseDocumentation]
+    reviewDocumentation -->|Score >= 4| updateMemoryBank[updateMemoryBank]
+    reviseDocumentation -->|Improved| updateMemoryBank
+    reviseDocumentation -->|Still Failing| rejectAndFlag[rejectAndFlag]
+    updateMemoryBank --> calculateDocumentationQualityScore[calculateDocumentationQualityScore]
+```
+
+### Implementation Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> executeTask[executeTask]
+    executeTask --> checkMemoryBank[checkMemoryBank]
+    checkMemoryBank --> updateDocumentation[updateDocumentation]
+    updateDocumentation --> updatePlans[updatePlans]
+    updatePlans --> executeImplementation[executeImplementation]
+    executeImplementation --> enforceCodeQualityStandards[enforceCodeQualityStandards]
+    enforceCodeQualityStandards --> executeCreatorPhase[executeCreatorPhase]
+    executeCreatorPhase --> executeCriticPhase[executeCriticPhase]
+    executeCriticPhase --> executeDefenderPhase[executeDefenderPhase]
+    executeDefenderPhase --> executeJudgePhase[executeJudgePhase]
+```
+
+### Error Recovery Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> detectToolFailure[detectToolFailure]
+    detectToolFailure --> logFailureDetails[logFailureDetails]
+    logFailureDetails --> analyzeFailureCauses[analyzeFailureCauses]
+    analyzeFailureCauses --> reviewToolUsage[reviewToolUsage]
+    reviewToolUsage --> adjustParameters[adjustParameters]
+    adjustParameters --> executeRetry[executeRetry]
+    executeRetry --> checkRetrySuccess{checkRetrySuccess}
+
+    checkRetrySuccess -->|Success| continueTask[Continue Task]
+    checkRetrySuccess -->|Failure| incrementRetryCount[incrementRetryCount]
+    incrementRetryCount --> checkRetryLimit{checkRetryLimit}
+
+    checkRetryLimit -->|Under Limit| executeRetry
+    checkRetryLimit -->|Limit Reached| escalateToUser[escalateToUser]
+    escalateToUser --> documentFailure[documentFailure]
+    documentFailure --> alertUser[alertUser]
+```
+
+### Evaluation Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> documentObjectiveSummary[documentObjectiveSummary]
+    documentObjectiveSummary --> calculatePerformanceScore[calculatePerformanceScore]
+    calculatePerformanceScore --> evaluateAgainstTargetScore[evaluateAgainstTargetScore]
+    evaluateAgainstTargetScore --> checkPerformance{performanceScore < targetScore}
+
+    checkPerformance -->|Yes| analyzePerformanceGap[analyzePerformanceGap]
+    analyzePerformanceGap --> identifyImprovementOpportunities[identifyImprovementOpportunities]
+    identifyImprovementOpportunities --> implementOptimizations[implementOptimizations]
+    implementOptimizations --> recalculatePerformanceScore[recalculatePerformanceScore]
+    recalculatePerformanceScore --> checkTargetAchieved{checkTargetAchieved}
+
+    checkPerformance -->|No| recordSuccessPatterns[recordSuccessPatterns]
+
+    checkTargetAchieved -->|Yes| recordSuccessPatterns
+    checkTargetAchieved -->|No| iterateOptimizationCycle[iterateOptimizationCycle]
+    iterateOptimizationCycle --> implementOptimizations
+
+    recordSuccessPatterns --> documentLessonsLearned[documentLessonsLearned]
+    documentLessonsLearned --> updateMemoryBank[updateMemoryBank]
+```
+
+### Self-Critique Workflow
+```mermaid
+flowchart TD
+    Start[Start] --> executeCreatorPhase[executeCreatorPhase]
+    executeCreatorPhase --> executeCriticPhase[executeCriticPhase]
+    executeCriticPhase --> executeDefenderPhase[executeDefenderPhase]
+    executeDefenderPhase --> executeJudgePhase[executeJudgePhase]
+``
+
+## Event Handlers
+
+<EventHandlers>
+  <Handler event="SessionStart">
+    <Action>Check if `.windsurf/` directory structure exists</Action>
+    <Action>If structure doesn't exist, scaffold it by creating all required directories</Action>
+    <Action>If memory files don't exist, initialize them with available project information</Action>
+    <Action>Load all memory layers from `.windsurf/core/`</Action>
+    <Action>Verify memory consistency using checksums in memory-index.md</Action>
+    <Action>Identify current task context from activeContext.md</Action>
+    <Action>Create a memory of this initialization process using the CASCADE GENERATED MEMORY system for automatic reminder via EPHEMERAL MEMORY</Action>
+  </Handler>
+
+  <Handler event="TaskStart">
+    <Action>Document task objectives in new task log</Action>
+    <Action>Develop criteria for successful task completion</Action>
+    <Action>Load relevant context from memory</Action>
+    <Action>Create implementation plan</Action>
+  </Handler>
+
+  <Handler event="ErrorDetected">
+    <Action>Document error details in `.windsurf/errors/`</Action>
+    <Action>Check memory for similar errors</Action>
+    <Action>Apply recovery strategy</Action>
+    <Action>Update error patterns</Action>
+  </Handler>
+
+  <Handler event="TaskComplete">
+    <Action>Document implementation details in task log</Action>
+    <Action>Evaluate performance</Action>
+    <Action>Update all memory layers</Action>
+    <Action>Update activeContext.md with next steps</Action>
+  </Handler>
+
+  <Handler event="SessionEnd">
+    <Action>Ensure all memory layers are synchronized</Action>
+    <Action>Document session summary in activeContext.md</Action>
+    <Action>Update checksums in memory-index.md</Action>
+  </Handler>
+</EventHandlers>
+
+## Function Map and Workflow System
+
+The system operates through a well-defined function map that serves as a software layer within the model context:
+
+<FunctionMap>
+  <!-- Memory Bank Structure Functions -->
+  <StructureFunctions>
+    <Function id="createProjectBrief">Create the foundational project brief document</Function>
+    <Function id="createProductContext">Document why the project exists and problems it solves</Function>
+    <Function id="createSystemPatterns">Document system architecture and design patterns</Function>
+    <Function id="createTechContext">Document technologies, setup and dependencies</Function>
+    <Function id="createActiveContext">Document current work focus and next steps</Function>
+    <Function id="createProgressDoc">Document what works and what's left to build</Function>
+    <Function id="checkMemoryBankExists">Verify if memory bank directory structure exists</Function>
+    <Function id="createMemoryBankDirectory">Create the .windsurf directory structure</Function>
+    <Function id="scaffoldMemoryBankStructure">Create all required subdirectories</Function>
+    <Function id="populateMemoryBankFiles">Initialize core memory files with available information</Function>
+    <Function id="readMemoryBank">Load all memory layers from .windsurf/core/</Function>
+  </StructureFunctions>
+
+  <!-- Documentation Functions -->
+  <DocumentationFunctions>
+    <Function id="checkDocumentationExists">Verify if documentation exists for current context</Function>
+    <Function id="scaffoldDocumentationStructure">Create documentation structure following unified format</Function>
+    <Function id="generateDocumentation">Create comprehensive documentation for current context</Function>
+    <Function id="selfEvaluateDocumentation">Score documentation quality on 10-point scale</Function>
+    <Function id="reviewDocumentation">Perform critical review of documentation on 5-point scale</Function>
+    <Function id="reviseDocumentation">Improve documentation based on review feedback</Function>
+    <Function id="updateMemoryBank">Synchronize all memory layers with new information</Function>
+    <Function id="calculateDocumentationQualityScore">Compute numerical quality score for documentation</Function>
+    <Function id="documentChanges">Record all changes made during implementation</Function>
+    <Function id="reviewAllFiles">Examine all modified files for documentation needs</Function>
+    <Function id="documentCurrentState">Update activeContext.md with current project state</Function>
+    <Function id="clarifyNextSteps">Document clear next steps in activeContext.md</Function>
+    <Function id="updateProjectRules">Update project-specific rules in .windsurfrules</Function>
+  </DocumentationFunctions>
+
+  <!-- Implementation Functions -->
+  <ImplementationFunctions>
+    <Function id="executeTask">Execute a specific implementation task</Function>
+    <Function id="checkMemoryBank">Review memory bank for relevant context</Function>
+    <Function id="updateDocumentation">Update documentation with new information</Function>
+    <Function id="updatePlans">Update .windsurf/plans/ with current implementation details</Function>
+    <Function id="executeImplementation">Execute the actual implementation work</Function>
+    <Function id="enforceCodeQualityStandards">Maintain high code quality</Function>
+  </ImplementationFunctions>
+
+  <!-- Error Recovery Functions -->
+  <ErrorRecoveryFunctions>
+    <Function id="detectToolFailure">Identify when a tool or process has failed</Function>
+    <Function id="logFailureDetails">Document detailed error information</Function>
+    <Function id="analyzeFailureCauses">Determine root causes of failure</Function>
+    <Function id="reviewToolUsage">Examine how the tool was being used</Function>
+    <Function id="adjustParameters">Modify parameters to address failure causes</Function>
+    <Function id="executeRetry">Attempt the operation again with adjusted parameters</Function>
+    <Function id="checkRetrySuccess">Verify if retry was successful</Function>
+    <Function id="incrementRetryCount">Increase the retry counter</Function>
+    <Function id="checkRetryLimit">Check if maximum retry attempts reached</Function>
+    <Function id="escalateToUser">Prepare detailed context for user intervention</Function>
+    <Function id="documentFailure">Record failure details in error logs</Function>
+    <Function id="alertUser">Notify user of unresolved issue</Function>
+  </ErrorRecoveryFunctions>
+
+  <!-- Evaluation Functions -->
+  <EvaluationFunctions>
+    <Function id="documentObjectiveSummary">Record clear objectives for evaluation</Function>
+    <Function id="calculatePerformanceScore">Compute numerical score based on performance standards</Function>
+    <Function id="evaluateAgainstTargetScore">Compare actual score against required threshold</Function>
+    <Function id="analyzePerformanceGap">Identify specific areas causing performance shortfall</Function>
+    <Function id="identifyImprovementOpportunities">Determine specific optimization opportunities</Function>
+    <Function id="implementOptimizations">Apply targeted improvements to solution</Function>
+    <Function id="recalculatePerformanceScore">Recompute score after optimizations</Function>
+    <Function id="checkTargetAchieved">Verify if performance target has been met</Function>
+    <Function id="iterateOptimizationCycle">Repeat optimization process</Function>
+    <Function id="recordSuccessPatterns">Document successful optimization patterns</Function>
+    <Function id="documentLessonsLearned">Record insights gained during optimization</Function>
+  </EvaluationFunctions>
+
+  <!-- Self-Critique Functions -->
+  <SelfCritiqueFunctions>
+    <Function id="executeCreatorPhase">Generate comprehensive initial solution</Function>
+    <Function id="executeCriticPhase">Identify weaknesses, edge cases, and assumptions</Function>
+    <Function id="executeDefenderPhase">Address criticisms systematically</Function>
+    <Function id="executeJudgePhase">Compare original and improved versions</Function>
+  </SelfCritiqueFunctions>
+</FunctionMap>
+
+<!-- Workflow Definitions -->
+<Workflows>
+  <!-- Initialization Workflow -->
+  <Workflow id="initialization">
+    <Step function="checkMemoryBankExists"/>
+    <Step function="createMemoryBankDirectory" condition="!memoryBankExists"/>
+    <Step function="scaffoldMemoryBankStructure" condition="!memoryBankExists"/>
+    <Step function="populateMemoryBankFiles" condition="!memoryBankExists"/>
+    <Step function="readMemoryBank"/>
+    <Step function="verifyFilesComplete"/>
+    <Step function="createMissingFiles" condition="!filesComplete"/>
+    <Step function="verifyContext"/>
+    <Step function="developStrategy"/>
+  </Workflow>
+
+  <!-- Documentation Workflow -->
+  <Workflow id="documentation">
+    <Step function="checkDocumentationExists"/>
+    <Step function="scaffoldDocumentationStructure" condition="!documentationExists"/>
+    <Step function="generateDocumentation"/>
+    <Step function="selfEvaluateDocumentation"/>
+    <Step function="reviewDocumentation"/>
+    <Step function="reviseDocumentation" condition="reviewScore < 4"/>
+    <Step function="updateMemoryBank" condition="reviewScore >= 4"/>
+    <Step function="calculateDocumentationQualityScore"/>
+  </Workflow>
+
+  <!-- Implementation Workflow -->
+  <Workflow id="implementation">
+    <Step function="executeTask"/>
+    <Step function="checkMemoryBank"/>
+    <Step function="updateDocumentation"/>
+    <Step function="updatePlans"/>
+    <Step function="executeImplementation"/>
+    <Step function="enforceCodeQualityStandards"/>
+    <Step function="executeCreatorPhase"/>
+    <Step function="executeCriticPhase"/>
+    <Step function="executeDefenderPhase"/>
+    <Step function="executeJudgePhase"/>
+  </Workflow>
+
+  <!-- Error Recovery Workflow -->
+  <Workflow id="errorRecovery">
+    <Step function="detectToolFailure"/>
+    <Step function="logFailureDetails"/>
+    <Step function="analyzeFailureCauses"/>
+    <Step function="reviewToolUsage"/>
+    <Step function="adjustParameters"/>
+    <Step function="executeRetry"/>
+    <Step function="checkRetrySuccess"/>
+    <Step function="incrementRetryCount" condition="!retrySuccess"/>
+    <Step function="checkRetryLimit" condition="!retrySuccess"/>
+    <Step function="executeRetry" condition="!retryLimitReached"/>
+    <Step function="escalateToUser" condition="retryLimitReached"/>
+    <Step function="documentFailure" condition="retryLimitReached"/>
+    <Step function="alertUser" condition="retryLimitReached"/>
+  </Workflow>
+
+  <!-- Evaluation Workflow -->
+  <Workflow id="evaluation">
+    <Step function="documentObjectiveSummary"/>
+    <Step function="calculatePerformanceScore"/>
+    <Step function="evaluateAgainstTargetScore"/>
+    <Step function="analyzePerformanceGap" condition="performanceScore < targetScore"/>
+    <Step function="identifyImprovementOpportunities" condition="performanceScore < targetScore"/>
+    <Step function="implementOptimizations" condition="performanceScore < targetScore"/>
+    <Step function="recalculatePerformanceScore" condition="optimizationsImplemented"/>
+    <Step function="checkTargetAchieved"/>
+    <Step function="iterateOptimizationCycle" condition="!targetAchieved"/>
+    <Step function="recordSuccessPatterns" condition="targetAchieved"/>
+    <Step function="documentLessonsLearned"/>
+    <Step function="updateMemoryBank"/>
+  </Workflow>
+
+  <!-- Self-Critique Workflow -->
+  <Workflow id="selfCritique">
+    <Step function="executeCreatorPhase"/>
+    <Step function="executeCriticPhase"/>
+    <Step function="executeDefenderPhase"/>
+    <Step function="executeJudgePhase"/>
+  </Workflow>
+</Workflows>
+
+## Core Rules
+
+<Rules>
+  <Rule id="1" description="Memory-First Development">
+    <SubRule id="1a">Begin every session by loading all three memory layers.</SubRule>
+    <SubRule id="1b">Verify memory consistency before starting any task.</SubRule>
+    <SubRule id="1c">Update appropriate memory layers after completing any task.</SubRule>
+  </Rule>
+
+  <Rule id="2" description="Complete Implementation">
+    <SubRule id="2a">Never leave placeholder comments or incomplete implementations.</SubRule>
+    <SubRule id="2b">Deliver fully functional, tested code for every task.</SubRule>
+    <SubRule id="2c">Escalate unresolvable issues to the user with complete context.</SubRule>
+  </Rule>
+
+  <Rule id="3" description="Read Before Edit">
+    <SubRule id="3a">Always read files before modifying them.</SubRule>
+    <SubRule id="3b">Document file contents in the task log if not already in Memory Bank.</SubRule>
+    <SubRule id="3c">Verify understanding of file purpose and structure before changes.</SubRule>
+  </Rule>
+
+  <Rule id="4" description="State Preservation">
+    <SubRule id="4a">Save project state to Memory Bank after every completed task.</SubRule>
+    <SubRule id="4b">Update memory-index.md with new or modified files.</SubRule>
+    <SubRule id="4c">Generate checksums for core memory files to detect inconsistencies.</SubRule>
+  </Rule>
+
+  <Rule id="5" description="Continuous Improvement">
+    <SubRule id="5a">Evaluate performance after each task using the scoring system.</SubRule>
+    <SubRule id="5b">Generate strict criteria during planning phase to validate high standard project and task completion.</SubRule>
+    <SubRule id="5c">Identify and document improvement opportunities.</SubRule>
+    <SubRule id="5d">Apply learned patterns to future tasks.</SubRule>
+  </Rule>
+
+  <Rule id="6" description="No Implementation Guessing">
+    <SubRule id="6a">Never guess implementations - always consult documentation first.</SubRule>
+    <SubRule id="6b">Use Cascade's real-time search capability to find accurate implementation details.</SubRule>
+    <SubRule id="6c">Document all implementation decisions with references to authoritative sources.</SubRule>
+    <SubRule id="6d">When documentation is unclear, use Cascade's search to find accurate implementation details. Never implement based on assumptions.</SubRule>
+  </Rule>
+
+  <Rule id="7" description="Dependency Management">
+    <SubRule id="7a">Add all dependencies via terminal commands without specifying versions.</SubRule>
+    <SubRule id="7b">Let package managers (npm, cargo, pip, etc.) select the correct compatible versions.</SubRule>
+    <SubRule id="7c">Document the command used to add each dependency in the task log.</SubRule>
+    <SubRule id="7d">Never manually edit version numbers in package files unless specifically instructed.</SubRule>
+    <SubRule id="7e">For JavaScript: Use `npm install package-name` without version constraints. [alternative package managers: yarn, pnpm, bun, etc.]</SubRule>
+    <SubRule id="7f">For Rust: Use `cargo add crate-name` without version constraints.</SubRule>
+    <SubRule id="7g">For Python: Use `pip install package-name` without version constraints. [alternative package managers: poetry, uv, etc.]</SubRule>
+  </Rule>
+
+  <Rule id="8" description="Context Management">
+    <SubRule id="8a">Monitor context utilization during large codebase analysis.</SubRule>
+    <SubRule id="8b">Reload global and workspace rulesets when context reaches 70% capacity.</SubRule>
+    <SubRule id="8c">Prioritize retention of critical implementation patterns and decisions.</SubRule>
+    <SubRule id="8d">Document context reloads in the task log to maintain continuity. The task log is your Working Memory and key to maintaining continuous learning.</SubRule>
+  </Rule>
+</Rules>
