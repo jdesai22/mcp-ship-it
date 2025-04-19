@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .doc-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .doc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-left: 3px solid var(--primary-color);
+        }
+        .doc-preview {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+        }
+        .doc-metadata {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        .dashboard-header {
+            padding: 15px 20px;
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dashboard-content {
+            padding: 20px;
+            height: calc(100vh - 63px);
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        .action-button {
+            margin-left: 10px;
+        }
+        .category-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #777;
+        }
+        .btn-back-to-chat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar for filtering and organization -->
+            <div class="col-md-3 sidebar">
+                <div class="sidebar-content">
+                    <h3>Documentation Dashboard</h3>
+                    <hr>
+                    <div class="mb-4">
+                        <h5>Filter Documents</h5>
+                        <div class="mb-3">
+                            <label for="projectFilter" class="form-label">Project Name</label>
+                            <input type="text" class="form-control" id="projectFilter" placeholder="Filter by project">
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentTypeFilter" class="form-label">Document Type</label>
+                            <select class="form-select" id="documentTypeFilter">
+                                <option value="" selected>All document types</option>
+                                <option value="projectoverview">Project Overview</option>
+                                <option value="techstack">Tech Stack</option>
+                                <option value="requirements">Requirements</option>
+                                <option value="features">Features</option>
+                            </select>
+                        </div>
+                        <button id="applyFilters" class="btn btn-primary btn-sm w-100">Apply Filters</button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5>Document Categories</h5>
+                        <div class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action active" id="allDocuments">
+                                All Documents
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" id="recentDocuments">
+                                Recent Documents
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" id="projectOverviews">
+                                Project Overviews
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" id="techStacks">
+                                Tech Stacks
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="document-tips">
+                        <h5>Dashboard Tips</h5>
+                        <ul class="small">
+                            <li>Click on any document card to view its contents</li>
+                            <li>Use filters to find specific documentation</li>
+                            <li>Create new documentation from the chat interface</li>
+                            <li>Export documentation for sharing with your team</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main dashboard area -->
+            <div class="col-md-9 chat-container">
+                <div class="dashboard-header">
+                    <h4 id="currentView">All Documentation</h4>
+                    <div class="actions">
+                        <a href="index.html" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-chat-dots"></i> Go to Chat
+                        </a>
+                        <button id="refreshDocs" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="dashboard-content">
+                    <!-- Placeholder for document listing or document preview -->
+                    <div id="documentsContainer">
+                        <!-- Document listing mode -->
+                        <div id="documentsList">
+                            <div class="category-header">Recent Documentation</div>
+                            <div class="row row-cols-1 row-cols-md-2 g-4" id="recentDocumentsList">
+                                <!-- Will be populated via JavaScript -->
+                            </div>
+                            
+                            <div class="category-header mt-4">All Documentation</div>
+                            <div class="row row-cols-1 row-cols-md-2 g-4" id="allDocumentsList">
+                                <!-- Will be populated via JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Document preview mode (initially hidden) -->
+                        <div id="documentPreview" class="d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 id="previewTitle">Document Title</h5>
+                                <button id="backToList" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left"></i> Back to List
+                                </button>
+                            </div>
+                            <div class="doc-metadata mb-3">
+                                <span id="documentType">Document Type</span> • 
+                                <span id="documentDate">Creation Date</span> • 
+                                <span id="documentProject">Project Name</span>
+                            </div>
+                            <div class="doc-preview markdown-content" id="documentContent">
+                                <!-- Document content will be loaded here -->
+                            </div>
+                            <div class="d-flex justify-content-end mt-3">
+                                <button id="exportDocument" class="btn btn-outline-primary btn-sm action-button">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                                <button id="editDocument" class="btn btn-outline-secondary btn-sm action-button">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingOverlay" class="d-none">
+        <div class="spinner-container">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-light mt-2">Loading documents...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html> 
