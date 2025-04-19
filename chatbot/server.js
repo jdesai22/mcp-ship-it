@@ -81,35 +81,96 @@ const saveDocumentation = (projectPath, filename, content) => {
 // New API endpoint to get available documents
 app.get('/api/documents', (req, res) => {
   try {
-    const files = fs.readdirSync(outputDir);
-    const documents = files
-      .filter(file => file.endsWith('.md'))
-      .map(file => {
-        // Parse filename to extract metadata
-        // Format: docType-projectName-timestamp.md
-        const parts = file.split('-');
-        const timestamp = parts.pop().replace('.md', '');
-        const docType = parts[0];
-        // Everything between docType and timestamp is the project name
-        const projectName = parts.slice(1, -1).join('-');
-        
-        return {
-          id: file.replace('.md', ''),
-          fileName: file,
-          documentType: docType,
-          projectName: projectName,
-          createdAt: new Date(timestamp.replace(/T|-/g, match => match === 'T' ? ' ' : match === '-' ? ':' : '/')).toISOString(),
-          // Content will be loaded when a specific document is requested
-          content: null
-        };
-      });
-    
+    // Get all documents recursively from output-docs directory and subfolders
+    const documents = getAllDocuments(outputDir);
     res.json(documents);
   } catch (error) {
     console.error('Error fetching documents:', error);
     res.status(500).json({ error: 'Failed to fetch documents' });
   }
 });
+
+// Recursively get all markdown documents from directory and subdirectories
+function getAllDocuments(dir, baseDir = outputDir) {
+  const documents = [];
+  const files = fs.readdirSync(dir);
+  
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    
+    if (stat.isDirectory()) {
+      // Recursively get documents from subdirectories
+      const subdirDocs = getAllDocuments(filePath, baseDir);
+      documents.push(...subdirDocs);
+    } else if (file.endsWith('.md')) {
+      try {
+        // Get relative path from the output-docs directory
+        const relativePath = path.relative(baseDir, filePath);
+        // Get the folder name (project name)
+        const folderName = path.dirname(relativePath) === '.' ? null : path.dirname(relativePath);
+        
+        // Instead of parsing the filename, use the file's creation timestamp
+        const creationTime = stat.birthtime || stat.mtime;
+        
+        // For document type and project name, still parse the filename
+        // but handle potential errors more gracefully
+        let documentType = 'doc';
+        let projectNameFromFile = '';
+        
+        // Try to parse filename patterns like "docType-projectName-timestamp.md"
+        if (file.includes('-')) {
+          const parts = file.split('-');
+          // First part is typically the document type
+          documentType = parts[0] || 'doc';
+          
+          // If we have more parts, everything except first and last could be project name
+          if (parts.length > 2) {
+            // Remove the file extension from the last part
+            const lastPart = parts[parts.length - 1].replace('.md', '');
+            // Check if last part looks like a timestamp
+            const isLastPartTimestamp = /^\d{4}/.test(lastPart);
+            
+            if (isLastPartTimestamp) {
+              // Last part is likely a timestamp, so project name is everything in between
+              projectNameFromFile = parts.slice(1, -1).join('-');
+            } else {
+              // Last part isn't a timestamp, so include it in the project name
+              projectNameFromFile = parts.slice(1).join('-').replace('.md', '');
+            }
+          } else {
+            // If only two parts, second part might be project name
+            projectNameFromFile = parts[1] ? parts[1].replace('.md', '') : '';
+          }
+        } else {
+          // Filename doesn't follow our pattern, use the filename without extension
+          documentType = 'doc';
+          projectNameFromFile = file.replace('.md', '');
+        }
+        
+        // Use folder name as project name if available, otherwise use from filename
+        const projectName = folderName || projectNameFromFile;
+        
+        documents.push({
+          id: relativePath.replace('.md', ''),
+          fileName: relativePath,
+          documentType: documentType,
+          projectName: projectName,
+          createdAt: creationTime.toISOString(),
+          // Content will be loaded when a specific document is requested
+          content: null,
+          // Include folder information for organization
+          folder: folderName
+        });
+      } catch (error) {
+        console.error(`Error processing file ${filePath}:`, error);
+        // Continue processing other files even if one fails
+      }
+    }
+  });
+  
+  return documents;
+}
 
 // Handle chat endpoint
 app.post('/api/chat', async (req, res) => {

@@ -18,6 +18,15 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             border-left: 3px solid var(--primary-color);
         }
+        .project-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 3px solid var(--secondary-color);
+        }
+        .project-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
         .doc-preview {
             max-height: calc(100vh - 150px);
             overflow-y: auto;
@@ -54,6 +63,9 @@
             color: var(--dark-color);
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .empty-state {
             text-align: center;
@@ -66,60 +78,90 @@
             right: 20px;
             z-index: 100;
         }
+        .folder-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.5rem;
+        }
+        .project-docs-container {
+            margin-bottom: 2rem;
+        }
+        .breadcrumb-container {
+            margin-bottom: 1rem;
+        }
+        .project-list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .project-list-item:hover {
+            background-color: var(--hover-color);
+        }
+        .project-list-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .project-list-item.active .badge {
+            background-color: white;
+            color: var(--primary-color);
+        }
+        .project-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .doc-type-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar for filtering and organization -->
+            <!-- Sidebar for project navigation -->
             <div class="col-md-3 sidebar">
                 <div class="sidebar-content">
                     <h3>Documentation Dashboard</h3>
                     <hr>
                     <div class="mb-4">
-                        <h5>Filter Documents</h5>
-                        <div class="mb-3">
-                            <label for="projectFilter" class="form-label">Project Name</label>
-                            <input type="text" class="form-control" id="projectFilter" placeholder="Filter by project">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Projects</h5>
+                            <span class="badge bg-primary" id="projectsCount">(0)</span>
                         </div>
+                        
                         <div class="mb-3">
-                            <label for="documentTypeFilter" class="form-label">Document Type</label>
-                            <select class="form-select" id="documentTypeFilter">
-                                <option value="" selected>All document types</option>
-                                <option value="projectoverview">Project Overview</option>
-                                <option value="techstack">Tech Stack</option>
-                                <option value="requirements">Requirements</option>
-                                <option value="features">Features</option>
-                            </select>
+                            <input type="text" class="form-control" id="projectSearchInput" placeholder="Search projects...">
                         </div>
-                        <button id="applyFilters" class="btn btn-primary btn-sm w-100">Apply Filters</button>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <h5>Document Categories</h5>
-                        <div class="list-group">
-                            <a href="#" class="list-group-item list-group-item-action active" id="allDocuments">
-                                All Documents
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action" id="recentDocuments">
-                                Recent Documents
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action" id="projectOverviews">
-                                Project Overviews
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action" id="techStacks">
-                                Tech Stacks
-                            </a>
+                        
+                        <!-- Projects list -->
+                        <div id="projectsList" class="list-group">
+                            <!-- Will be populated via JavaScript -->
                         </div>
                     </div>
                     
-                    <div class="document-tips">
-                        <h5>Dashboard Tips</h5>
+                    <div class="mt-4">
+                        <div class="d-grid gap-2">
+                            <a href="index.html" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Create New Documentation
+                            </a>
+                            <button id="refreshButton" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh Projects
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="document-tips mt-4">
+                        <h5>Quick Tips</h5>
                         <ul class="small">
-                            <li>Click on any document card to view its contents</li>
-                            <li>Use filters to find specific documentation</li>
+                            <li>Click on a project to view its documentation</li>
                             <li>Create new documentation from the chat interface</li>
-                            <li>Export documentation for sharing with your team</li>
+                            <li>Each project contains multiple document types</li>
+                            <li>Use the search to find specific projects</li>
                         </ul>
                     </div>
                 </div>
@@ -128,29 +170,42 @@
             <!-- Main dashboard area -->
             <div class="col-md-9 chat-container">
                 <div class="dashboard-header">
-                    <h4 id="currentView">All Documentation</h4>
+                    <h4 id="currentView">Documentation Dashboard</h4>
                     <div class="actions">
                         <a href="index.html" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-chat-dots"></i> Go to Chat
                         </a>
-                        <button id="refreshDocs" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
-                        </button>
                     </div>
                 </div>
                 
                 <div class="dashboard-content">
+                    <!-- Breadcrumb navigation -->
+                    <nav aria-label="breadcrumb" class="breadcrumb-container d-none" id="breadcrumbContainer">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="#" id="breadcrumbHome">Home</a></li>
+                            <li class="breadcrumb-item active" id="breadcrumbCurrent">Current View</li>
+                        </ol>
+                    </nav>
+                
                     <!-- Placeholder for document listing or document preview -->
                     <div id="documentsContainer">
-                        <!-- Document listing mode -->
-                        <div id="documentsList">
-                            <div class="category-header">Recent Documentation</div>
-                            <div class="row row-cols-1 row-cols-md-2 g-4" id="recentDocumentsList">
+                        <!-- Projects view (initially shown) -->
+                        <div id="projectsContainer">
+                            <div class="category-header">
+                                All Projects
+                                <small class="text-muted" id="allProjectsCount">(0 projects)</small>
+                            </div>
+                            <div class="row row-cols-1 row-cols-md-2 g-4" id="allProjectsList">
                                 <!-- Will be populated via JavaScript -->
                             </div>
-                            
-                            <div class="category-header mt-4">All Documentation</div>
-                            <div class="row row-cols-1 row-cols-md-2 g-4" id="allDocumentsList">
+                        </div>
+                        
+                        <!-- Project documents view (initially hidden) -->
+                        <div id="projectDocumentsContainer" class="d-none">
+                            <div class="category-header" id="projectDocumentsHeader">
+                                Project Documents
+                            </div>
+                            <div class="row row-cols-1 row-cols-md-3 g-4" id="projectDocumentsList">
                                 <!-- Will be populated via JavaScript -->
                             </div>
                         </div>
@@ -160,7 +215,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 id="previewTitle">Document Title</h5>
                                 <button id="backToList" class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-arrow-left"></i> Back to List
+                                    <i class="bi bi-arrow-left"></i> Back to Project
                                 </button>
                             </div>
                             <div class="doc-metadata mb-3">

@@ -48,6 +48,24 @@ document.addEventListener('DOMContentLoaded', () => {
     generateAllDocsBtn.addEventListener('click', generateAllDocuments);
     clearChatBtn.addEventListener('click', clearChat);
     
+    // Add event listener for toast shown event to update the toast content
+    documentSavedToast.addEventListener('shown.bs.toast', function() {
+        // Update toast body to include dashboard link
+        const toastBody = documentSavedToast.querySelector('.toast-body');
+        if (toastBody) {
+            // Keep original message and add dashboard link
+            const originalMessage = toastBody.textContent;
+            toastBody.innerHTML = `
+                ${originalMessage}<br>
+                <small class="mt-2 d-block">
+                    <a href="dashboard.html" class="text-primary">
+                        <i class="bi bi-kanban"></i> View all documents in Dashboard
+                    </a>
+                </small>
+            `;
+        }
+    });
+    
     // Fetch document types from API
     async function fetchDocumentationTypes() {
         try {
@@ -174,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toast.show();
                 
                 // Show modal with all documents
-                showProjectDocumentsModal(projectName);
+                showProjectDocumentsModal(projectName, data.filePaths);
             }
             
         } catch (error) {
@@ -191,53 +209,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Show modal with project documents
-    function showProjectDocumentsModal(projectName) {
-        const project = projectStructure[projectName];
+    function showProjectDocumentsModal(projectName, documents) {
+        // Update modal title with project name
+        const modalTitle = projectDocsModal.querySelector('.modal-title');
+        modalTitle.textContent = `${projectName} - Generated Documents`;
         
-        if (!project) return;
+        // Get modal body to show documents
+        const modalBody = projectDocsModal.querySelector('.modal-body');
+        modalBody.innerHTML = '';
         
-        // Set project title and timestamp
-        projectTitle.textContent = projectName;
-        projectGenerated.textContent = `Generated on: ${project.timestamp}`;
-        
-        // Clear previous list
-        projectDocsList.innerHTML = '';
-        
-        // Add index file first
-        const indexFile = project.files.find(file => file.type === 'Index');
-        if (indexFile) {
-            const indexItem = document.createElement('a');
-            indexItem.href = `/${indexFile.path}`;
-            indexItem.className = 'list-group-item list-group-item-action';
-            indexItem.target = '_blank';
-            indexItem.innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">Index</h6>
-                    <small class="text-muted"><i class="bi bi-file-text"></i></small>
-                </div>
-                <small class="text-muted">Documentation index file</small>
+        if (documents && documents.length > 0) {
+            // Create list of documents
+            const documentsList = document.createElement('ul');
+            documentsList.className = 'list-group';
+            
+            documents.forEach(doc => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                
+                const docNameSpan = document.createElement('span');
+                docNameSpan.textContent = doc.type;
+                listItem.appendChild(docNameSpan);
+                
+                const viewButton = document.createElement('a');
+                viewButton.href = `/${doc.path}`;
+                viewButton.className = 'btn btn-primary btn-sm';
+                viewButton.textContent = 'View';
+                listItem.appendChild(viewButton);
+                
+                documentsList.appendChild(listItem);
+            });
+            
+            modalBody.appendChild(documentsList);
+            
+            // Add dashboard link below the list
+            const dashboardLink = document.createElement('div');
+            dashboardLink.className = 'mt-4 text-center';
+            dashboardLink.innerHTML = `
+                <a href="dashboard.html" class="btn btn-outline-secondary">
+                    <i class="bi bi-kanban"></i> Open Dashboard for Complete Overview
+                </a>
+                <p class="mt-2 text-muted small">View all your projects and documents in one place</p>
             `;
-            projectDocsList.appendChild(indexItem);
+            modalBody.appendChild(dashboardLink);
+        } else {
+            modalBody.innerHTML = '<div class="alert alert-info">No documents have been generated yet.</div>';
         }
         
-        // Add all other documents
-        project.files.filter(file => file.type !== 'Index').forEach(file => {
-            const item = document.createElement('a');
-            item.href = `/${file.path}`;
-            item.className = 'list-group-item list-group-item-action';
-            item.target = '_blank';
-            item.innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${file.type}</h6>
-                    <small class="text-muted"><i class="bi bi-file-text"></i></small>
-                </div>
-                <small class="text-muted">${file.path.split('/').pop()}</small>
-            `;
-            projectDocsList.appendChild(item);
-        });
-        
-        // Show the modal
-        projectDocsModal.show();
+        // Show modal
+        const modal = new bootstrap.Modal(projectDocsModal);
+        modal.show();
     }
     
     // Send message to API
@@ -502,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add click event to show project documents modal
         folderItem.addEventListener('click', () => {
-            showProjectDocumentsModal(projectName);
+            showProjectDocumentsModal(projectName, projectStructure[projectName].files);
         });
         
         savedDocsList.appendChild(folderItem);
