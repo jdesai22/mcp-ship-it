@@ -1,0 +1,26 @@
+{
+  "name": "technical-documentation-chatbot",
+  "version": "1.0.0",
+  "description": "A chatbot for generating technical documentation using the Windsurf Meta-Workflow methodology",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fs": "0.0.1-security",
+    "openai": "^4.0.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "private": true
+} 

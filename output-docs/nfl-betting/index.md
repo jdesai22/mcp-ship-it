@@ -1,0 +1,14 @@
+# nfl-betting - Documentation Index
+
+Generated on: 4/19/2025, 2:22:02 PM
+
+## Document Types
+
+- [Project Overview](./projectoverview.md)
+- [Feature Specifications](./features.md)
+- [Requirements Documentation](./requirements.md)
+- [Tech Stack Documentation](./techstack.md)
+- [Dependencies Documentation](./dependencies.md)
+- [User Flows](./userflow.md)
+- [Implementation Standards](./implementation.md)
+- [Project Structure](./projectstructure.md)
