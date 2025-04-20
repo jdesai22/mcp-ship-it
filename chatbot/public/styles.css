@@ -1,3 +1,6 @@
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
     --primary-color: #0addc0; /* Blue-green primary color */
     --secondary-color: #00a3cc; /* Darker blue-green secondary color */
@@ -15,11 +18,14 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 400;
     background-color: var(--dark-color);
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
+    line-height: 1.6; /* Improved line height for better readability */
+    letter-spacing: 0.011em; /* Subtle letter spacing improvement */
 }
 
 .container-fluid {
@@ -48,13 +54,17 @@ body {
 .sidebar h3 {
     color: var(--primary-color);
     font-size: 1.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
+    font-weight: 700; /* Increased font weight for headings */
+    letter-spacing: -0.02em; /* Tighter spacing for headings */
 }
 
 .sidebar h5 {
     color: var(--text-primary);
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
+    font-weight: 600; /* Medium-bold for subheadings */
+    letter-spacing: -0.01em;
 }
 
 /* Form controls */
@@ -62,6 +72,8 @@ body {
     background-color: var(--medium-gray);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
 }
 
 .form-control:focus, .form-select:focus {
@@ -74,6 +86,7 @@ body {
 .form-select option {
     background-color: var(--medium-gray);
     color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
 }
 
 /* Chat container styles */
@@ -94,6 +107,11 @@ body {
     color: var(--text-primary);
 }
 
+.chat-header h4 {
+    font-weight: 600; /* Semi-bold for headers */
+    letter-spacing: -0.01em;
+}
+
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -111,6 +129,7 @@ body {
 .message {
     margin-bottom: 20px;
     max-width: 85%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle drop shadow for depth */
 }
 
 .user-message {
@@ -140,6 +159,7 @@ body {
 
 .message-content {
     padding: 15px;
+    line-height: 1.7; /* Increased line height for better readability */
 }
 
 .message-time {
@@ -147,11 +167,13 @@ body {
     color: var(--text-secondary);
     text-align: right;
     margin-top: 5px;
+    font-weight: 300; /* Lighter weight for timestamps */
 }
 
 /* Fix for Bootstrap textarea resize */
 textarea.form-control {
     resize: none;
+    font-family: 'Inter', sans-serif;
 }
 
 /* Loading overlay */
@@ -181,14 +203,17 @@ textarea.form-control {
 .document-item {
     cursor: pointer;
     border-left: 3px solid transparent;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease; /* Slightly longer transition */
     background-color: var(--medium-gray);
     color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow */
 }
 
 .document-item:hover {
     background-color: var(--hover-color);
     border-left-color: var(--primary-color);
+    transform: translateY(-2px) scale(1.01); /* Subtle lift and scale effect */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15); /* Enhanced shadow on hover */
 }
 
 /* Project Modal */
@@ -196,6 +221,7 @@ textarea.form-control {
     background-color: var(--darker-gray);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Enhanced modal shadow */
 }
 
 #projectDocsModal .modal-header {
@@ -207,7 +233,7 @@ textarea.form-control {
 }
 
 #projectDocsModal .list-group-item {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     background-color: var(--medium-gray);
     color: var(--text-primary);
     border-color: var(--border-color);
@@ -215,11 +241,13 @@ textarea.form-control {
 
 #projectDocsModal .list-group-item:hover {
     background-color: var(--hover-color);
+    transform: translateY(-2px); /* Subtle lift effect */
 }
 
 #projectTitle {
     color: var(--primary-color);
-    font-weight: 600;
+    font-weight: 700; /* Bold project title */
+    letter-spacing: -0.02em; /* Tighter letter spacing for headings */
 }
 
 /* Button styles */
@@ -227,12 +255,17 @@ textarea.form-control {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
     color: #000; /* Dark text for contrast */
+    font-weight: 500; /* Medium weight for buttons */
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Subtle shadow */
 }
 
 .btn-primary:hover {
     background-color: #08c2a9; /* Slightly darker on hover */
     border-color: #08c2a9;
     color: #000;
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 3px 8px rgba(10, 221, 192, 0.3); /* Glow effect */
 }
 
 .btn-primary:focus {
@@ -242,88 +275,93 @@ textarea.form-control {
 .btn-outline-primary {
     color: var(--primary-color);
     border-color: var(--primary-color);
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .btn-outline-primary:hover {
     background-color: var(--primary-color);
     color: #000;
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 3px 8px rgba(10, 221, 192, 0.3); /* Glow effect */
 }
 
 .btn-success {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-    color: white;
+    background-color: #28a745;
+    border-color: #28a745;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Subtle shadow */
 }
 
 .btn-success:hover {
-    background-color: #0088aa; /* Slightly darker on hover */
-    border-color: #0088aa;
+    background-color: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3); /* Glow effect */
 }
 
 .btn-outline-secondary {
     color: var(--text-primary);
-    border-color: var(--light-gray);
+    border-color: var(--border-color);
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .btn-outline-secondary:hover {
-    background-color: var(--light-gray);
-    color: var(--text-primary);
+    background-color: var(--hover-color);
+    color: var(--primary-color);
+    transform: translateY(-2px); /* Subtle lift effect */
+    border-color: var(--primary-color);
 }
 
 /* Generate All Button styles */
 #generateAllDocs {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
     transition: all 0.3s ease;
     font-weight: 500;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 #generateAllDocs:hover:not(:disabled) {
-    background-color: #0088aa;
-    border-color: #0088aa;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    background-color: var(--primary-color);
+    color: #000;
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 3px 8px rgba(10, 221, 192, 0.3); /* Glow effect */
 }
 
 #generateAllDocs:disabled {
-    background-color: #004d5e;
-    border-color: #004d5e;
+    opacity: 0.5;
     cursor: not-allowed;
-}
-
-#generateAllDocs:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-/* Divider styles */
-.text-muted.small {
-    display: block;
-    text-align: center;
-    position: relative;
+    border-color: var(--border-color);
     color: var(--text-secondary);
 }
 
-.text-muted.small::before,
-.text-muted.small::after {
-    content: "";
-    display: inline-block;
-    width: 40%;
-    height: 1px;
-    background-color: var(--border-color);
-    vertical-align: middle;
-    margin: 0 10px;
+#generateAllDocs:active:not(:disabled) {
+    transform: translateY(0px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.text-muted.small {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem;
+    font-weight: 300; /* Lighter weight for small text */
+    letter-spacing: 0.01em;
+    line-height: 1.5;
 }
 
 /* Markdown content styling */
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3 {
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
     color: var(--primary-color);
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700; /* Bold headings */
+    letter-spacing: -0.02em; /* Tighter letter spacing for headings */
+    line-height: 1.3; /* Improved line height for headings */
 }
 
 .markdown-content pre {
@@ -357,16 +395,19 @@ textarea.form-control {
 
 /* Project dashboard styles */
 .project-list-item {
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
     background-color: var(--medium-gray);
     color: var(--text-primary);
-    border-left: 3px solid var(--secondary-color);
-    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow */
 }
 
 .project-list-item:hover {
     background-color: var(--hover-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-left-color: var(--primary-color);
+    transform: translateY(-2px) scale(1.01); /* Subtle lift and scale effect */
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15); /* Enhanced shadow on hover */
 }
 
 .project-list-item .project-icon {
@@ -374,8 +415,8 @@ textarea.form-control {
 }
 
 .project-list-item .project-name {
-    font-weight: 500;
-    color: var(--text-primary);
+    font-weight: 500; /* Medium weight for project names */
+    letter-spacing: -0.01em;
 }
 
 .project-list-item.active {
@@ -394,6 +435,9 @@ textarea.form-control {
 }
 
 .document-list-item {
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 4px;
     padding: 8px 12px;
     margin-bottom: 5px;
     background-color: var(--medium-gray);
