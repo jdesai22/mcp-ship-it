@@ -696,4 +696,43 @@ pre, code {
 #projectsList .file-explorer-folder.active .file-explorer-folder-count {
     background-color: #000;
     color: var(--primary-color);
+}
+
+/* Form control overrides for dark mode */
+.form-control {
+    background-color: var(--medium-gray);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    background-color: var(--medium-gray);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(10, 221, 192, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Add styles for the markdown editor */
+#markdownEditor {
+    font-family: monospace;
+    resize: vertical;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    padding: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* Style for success messages */
+.alert-success {
+    margin-bottom: 20px;
+}
+
+/* Ensure buttons are properly aligned */
+#editDocumentBtn, #cancelEditBtn {
+    margin-left: 8px;
 } 

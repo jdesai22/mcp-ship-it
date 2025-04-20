@@ -396,9 +396,86 @@ app.get('/api/documentation-types', (req, res) => {
   res.json(documentationTypes);
 });
 
+// API endpoint to save edited document
+app.post('/api/save-document', (req, res) => {
+  // console.log('\n\n==== SAVE DOCUMENT REQUEST RECEIVED ====');
+  try {
+    const { filePath, content } = req.body;
+    // console.log('Request body received:');
+    // console.log('- filePath:', filePath);
+    // console.log('- content length:', content ? content.length : 0);
+    
+    if (!filePath || content === undefined) {
+      console.error('Error: Missing filePath or content');
+      return res.status(400).json({ success: false, error: 'File path and content are required' });
+    }
+    
+    // Ensure the file path is within the output-docs directory for security
+    const fullPath = path.join(__dirname, '..', filePath);
+    const normalizedOutputDir = path.normalize(outputDir);
+    
+    // Debug logging
+    // console.log('Document save request:');
+    // console.log('File path:', filePath);
+    // console.log('Full path:', fullPath);
+    // console.log('Normalized output dir:', normalizedOutputDir);
+    // console.log('Path check:', path.resolve(fullPath).startsWith(path.resolve(normalizedOutputDir)));
+    
+    // Fix the path validation to handle relative paths correctly
+    if (!path.resolve(fullPath).startsWith(path.resolve(normalizedOutputDir))) {
+      console.error('Path security violation detected:', {
+        fullPath,
+        outputDir: normalizedOutputDir,
+        resolved: {
+          fullPath: path.resolve(fullPath),
+          outputDir: path.resolve(normalizedOutputDir)
+        }
+      });
+      
+      return res.status(403).json({ 
+        success: false, 
+        error: `Access denied: Cannot save files outside the output-docs directory. File must be in: ${normalizedOutputDir}` 
+      });
+    }
+    
+    // Make sure the directory exists
+    const dirPath = path.dirname(fullPath);
+    if (!fs.existsSync(dirPath)) {
+      // console.log(`Creating directory: ${dirPath}`);
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    
+    // Write the content to the file
+    fs.writeFileSync(fullPath, content, 'utf8');
+    // console.log(`File saved successfully: ${fullPath}`);
+    
+    const responseData = { 
+      success: true, 
+      filePath: filePath,
+      fullPath: fullPath,
+      relativePath: path.relative(path.join(__dirname, '..'), fullPath)
+    };
+    // console.log('Response data:', responseData);
+    // console.log('==== SAVE DOCUMENT REQUEST COMPLETED ====\n\n');
+    
+    res.json(responseData);
+  } catch (error) {
+    console.error('Error saving document:', error);
+    const errorResponse = { 
+      success: false, 
+      error: `Failed to save document: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    };
+    console.error('Error response:', errorResponse);
+    // console.log('==== SAVE DOCUMENT REQUEST FAILED ====\n\n');
+    
+    res.status(500).json(errorResponse);
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Documentation chatbot server running on port ${PORT}`);
+  // console.log(`Documentation chatbot server running on port ${PORT}`);
 });
 
 /**
@@ -423,4 +500,33 @@ function cleanGeneratedContent(content) {
   }
   
   return content.trim();
+}
+
+// Expand project document list in sidebar
+function expandProjectInSidebar(projectName) {
+  // For the new file explorer
+  if (window.FileExplorer) {
+    // Find the project folder item by name
+    const projectFolders = document.querySelectorAll('.file-explorer-folder');
+    projectFolders.forEach(folder => {
+      const folderNameEl = folder.querySelector('.file-explorer-folder-name');
+      if (folderNameEl && folderNameEl.textContent === projectName) {
+        // Get the files list element
+        const filesList = folder.nextElementSibling;
+        if (filesList && filesList.classList.contains('file-explorer-files')) {
+          // Expand this folder
+          filesList.style.display = 'block';
+          
+          // Update folder icon to open
+          const folderIcon = folder.querySelector('.file-explorer-folder-icon');
+          if (folderIcon) {
+            folderIcon.classList.remove('bi-folder-fill');
+            folderIcon.classList.add('bi-folder2-open');
+          }
+        } else {
+          // console.log('Files list not found for project:', projectName);
+        }
+      }
+    });
+  }
 } 
