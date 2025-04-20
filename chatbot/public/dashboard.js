@@ -145,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return a.name.localeCompare(b.name);
         });
         
+        // Make projects available globally for file explorer
+        window.dashboardProjects = projects;
+        
         // Update project counts
         updateProjectCounts();
     }
@@ -279,29 +282,69 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Expand project document list in sidebar
     function expandProjectInSidebar(projectName) {
-        // Close all document lists
-        document.querySelectorAll('.project-documents').forEach(el => {
-            el.style.display = 'none';
-        });
-        
-        // Reset all toggle icons
-        document.querySelectorAll('.toggle-icon').forEach(icon => {
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-right');
-        });
-        
-        // Expand the current project's document list
-        const projectItem = document.querySelector(`.project-list-item[data-project="${projectName}"]`);
-        if (projectItem) {
-            const documentsContainer = projectItem.querySelector('.project-documents');
-            if (documentsContainer) {
-                documentsContainer.style.display = 'block';
-                
-                // Update the toggle icon
-                const toggleIcon = projectItem.querySelector('.toggle-icon');
-                if (toggleIcon) {
-                    toggleIcon.classList.remove('bi-chevron-right');
-                    toggleIcon.classList.add('bi-chevron-down');
+        // For the new file explorer
+        if (window.FileExplorer) {
+            // Find the project folder item by name
+            const projectFolders = document.querySelectorAll('.file-explorer-folder');
+            projectFolders.forEach(folder => {
+                const folderNameEl = folder.querySelector('.file-explorer-folder-name');
+                if (folderNameEl && folderNameEl.textContent === projectName) {
+                    // Get the files list element
+                    const filesList = folder.nextElementSibling;
+                    if (filesList && filesList.classList.contains('file-explorer-files')) {
+                        // Expand this folder
+                        filesList.style.display = 'block';
+                        
+                        // Update folder icon to open
+                        const folderIcon = folder.querySelector('.file-explorer-folder-icon');
+                        if (folderIcon) {
+                            folderIcon.classList.remove('bi-folder-fill');
+                            folderIcon.classList.add('bi-folder2-open');
+                        }
+                    } else {
+                        console.log('Files list not found for project:', projectName);
+                    }
+                } else {
+                    // Collapse other folders
+                    const otherFilesList = folder.nextElementSibling;
+                    if (otherFilesList && otherFilesList.classList.contains('file-explorer-files')) {
+                        otherFilesList.style.display = 'none';
+                        
+                        // Update folder icon to closed
+                        const folderIcon = folder.querySelector('.file-explorer-folder-icon');
+                        if (folderIcon) {
+                            folderIcon.classList.remove('bi-folder2-open');
+                            folderIcon.classList.add('bi-folder-fill');
+                        }
+                    }
+                }
+            });
+        } else {
+            // Original expand/collapse code for the old structure
+            // Close all document lists
+            document.querySelectorAll('.project-documents').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Reset all toggle icons
+            document.querySelectorAll('.toggle-icon').forEach(icon => {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-right');
+            });
+            
+            // Expand the current project's document list
+            const projectItem = document.querySelector(`.project-list-item[data-project="${projectName}"]`);
+            if (projectItem) {
+                const documentsContainer = projectItem.querySelector('.project-documents');
+                if (documentsContainer) {
+                    documentsContainer.style.display = 'block';
+                    
+                    // Update the toggle icon
+                    const toggleIcon = projectItem.querySelector('.toggle-icon');
+                    if (toggleIcon) {
+                        toggleIcon.classList.remove('bi-chevron-right');
+                        toggleIcon.classList.add('bi-chevron-down');
+                    }
                 }
             }
         }
@@ -339,113 +382,74 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Render each project in the sidebar as a collapsible item
-        projectsToRender.forEach(project => {
-            const projectItem = document.createElement('div');
-            projectItem.className = 'project-list-item';
-            projectItem.setAttribute('data-project', project.name);
+        // Convert projects to format expected by file explorer
+        const projectsData = projectsToRender.map(project => {
+            // Extract filenames from documents
+            const files = project.documents.map(doc => doc.fileName.split('/').pop());
             
-            // Add expand/collapse control
-            const collapseId = `collapse-${project.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            return {
+                name: project.name,
+                files: files
+            };
+        });
+        
+        // Use the file explorer to render projects
+        if (window.FileExplorer) {
+            window.FileExplorer.create('projectsList', projectsData);
             
-            projectItem.innerHTML = `
-                <div class="d-flex align-items-center w-100 project-header">
-                    <i class="bi bi-chevron-right me-1 toggle-icon"></i>
-                    <i class="bi bi-folder project-icon"></i>
-                    <span class="flex-grow-1 project-name">${project.name}</span>
-                    <span class="badge bg-secondary">${project.documents.length}</span>
-                </div>
-                <div class="project-documents" id="${collapseId}" style="display: none;">
-                    <!-- Documents will be inserted here -->
-                </div>
-            `;
+            // Add click handlers to file explorer items
+            setTimeout(() => {
+                const fileItems = document.querySelectorAll('.file-explorer-file');
+                fileItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent folder toggle
+                        const fileName = this.querySelector('span').textContent;
+                        const projectName = this.closest('.file-explorer-item')
+                                               .querySelector('.file-explorer-folder-name').textContent;
+                        
+                        // Find the document in our data
+                        const project = projects.find(p => p.name === projectName);
+                        if (project) {
+                            const document = project.documents.find(d => d.fileName.includes(fileName));
+                            if (document) {
+                                viewDocument(document.id);
+                            }
+                        }
+                    });
+                });
+            }, 100);
             
-            // Add project click event
-            const projectHeader = projectItem.querySelector('.project-header');
-            projectHeader.addEventListener('click', (e) => {
-                // First close all other document lists
-                document.querySelectorAll('.project-documents').forEach(el => {
-                    if (el.id !== collapseId) {
-                        el.style.display = 'none';
+            // If there's a current project, expand its folder
+            if (currentProject) {
+                expandProjectInSidebar(currentProject.name);
+            }
+        } else {
+            // Fallback to original rendering if file explorer is not available
+            projectsToRender.forEach(project => {
+                const projectItem = document.createElement('div');
+                projectItem.className = 'project-list-item';
+                projectItem.setAttribute('data-project', project.name);
+                
+                projectItem.innerHTML = `
+                    <div class="d-flex align-items-center w-100">
+                        <i class="bi bi-folder project-icon"></i>
+                        <span class="flex-grow-1 project-name">${project.name}</span>
+                        <span class="badge bg-secondary">${project.documents.length}</span>
+                    </div>
+                `;
+                
+                // Add click event
+                projectItem.addEventListener('click', function() {
+                    const projectName = this.getAttribute('data-project');
+                    const projectObj = projects.find(p => p.name === projectName);
+                    if (projectObj) {
+                        showProjectDocuments(projectObj);
                     }
                 });
                 
-                // Reset all toggle icons
-                document.querySelectorAll('.toggle-icon').forEach(icon => {
-                    icon.classList.remove('bi-chevron-down');
-                    icon.classList.add('bi-chevron-right');
-                });
-                
-                // Toggle the clicked project's document list
-                const documentsContainer = projectItem.querySelector('.project-documents');
-                const toggleIcon = projectItem.querySelector('.toggle-icon');
-                
-                if (documentsContainer.style.display === 'none') {
-                    documentsContainer.style.display = 'block';
-                    toggleIcon.classList.remove('bi-chevron-right');
-                    toggleIcon.classList.add('bi-chevron-down');
-                } else {
-                    documentsContainer.style.display = 'none';
-                    toggleIcon.classList.remove('bi-chevron-down');
-                    toggleIcon.classList.add('bi-chevron-right');
-                }
-                
-                // Show the project documents in the main area
-                showProjectDocuments(project);
+                projectsList.appendChild(projectItem);
             });
-            
-            // Add the project item to the sidebar
-            projectsList.appendChild(projectItem);
-            
-            // Add document items to the collapsible section
-            const documentsContainer = projectItem.querySelector('.project-documents');
-            
-            // Group documents by type
-            const docsByType = {};
-            project.documents.forEach(doc => {
-                if (!docsByType[doc.documentType]) {
-                    docsByType[doc.documentType] = [];
-                }
-                docsByType[doc.documentType].push(doc);
-            });
-            
-            // Add documents grouped by type
-            Object.keys(docsByType).sort().forEach(docType => {
-                // For each document type, sort by createdAt (newest first)
-                const docs = docsByType[docType].sort((a, b) => 
-                    new Date(b.createdAt) - new Date(a.createdAt)
-                );
-                
-                docs.forEach(doc => {
-                    const docItem = document.createElement('div');
-                    docItem.className = 'document-list-item';
-                    
-                    // Get just the filename without path
-                    const fileName = doc.fileName.split('/').pop();
-                    
-                    docItem.innerHTML = `
-                        <i class="bi bi-file-text document-icon"></i>
-                        <span class="document-name">${fileName}</span>
-                    `;
-                    
-                    // Add document click event
-                    docItem.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent triggering project click
-                        viewDocument(doc.id);
-                    });
-                    
-                    documentsContainer.appendChild(docItem);
-                });
-            });
-            
-            // If this is the current project, show its document list
-            if (currentProject && currentProject.name === project.name) {
-                documentsContainer.style.display = 'block';
-                const toggleIcon = projectItem.querySelector('.toggle-icon');
-                toggleIcon.classList.remove('bi-chevron-right');
-                toggleIcon.classList.add('bi-chevron-down');
-            }
-        });
+        }
     }
     
     // Create a project card for the main view

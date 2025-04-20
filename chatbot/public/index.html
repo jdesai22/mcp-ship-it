@@ -14,6 +14,33 @@
             left: 20px;
             z-index: 100;
         }
+        
+        /* Dark theme overrides for Bootstrap components */
+        .modal-content {
+            background-color: var(--darker-gray);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .modal-header, .modal-footer {
+            border-color: var(--border-color);
+        }
+        
+        .toast {
+            background-color: var(--darker-gray);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Spinner styling */
+        .spinner-border {
+            border-color: var(--primary-color);
+            border-right-color: transparent;
+        }
     </style>
 </head>
 <body>
