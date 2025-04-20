@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Technical Documentation Generator</title>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="styles.css">
@@ -13,6 +17,33 @@
             bottom: 20px;
             left: 20px;
             z-index: 100;
+        }
+        
+        /* Dark theme overrides for Bootstrap components */
+        .modal-content {
+            background-color: var(--darker-gray);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .modal-header, .modal-footer {
+            border-color: var(--border-color);
+        }
+        
+        .toast {
+            background-color: var(--darker-gray);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Spinner styling */
+        .spinner-border {
+            border-color: var(--primary-color);
+            border-right-color: transparent;
         }
     </style>
 </head>
