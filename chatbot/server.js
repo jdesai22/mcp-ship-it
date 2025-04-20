@@ -300,7 +300,10 @@ Always include a "Memory Context" section that shows relationships with other do
         // Create a modified message specifically for this document type
         const docTypeMessage = {
           role: 'user',
-          content: `Please generate the "${docType.name}" documentation for my project named "${projectDetails.name}". Here's the information about my project: ${messages[messages.length - 1].content}`
+          content: `Please generate the "${docType.name}" documentation for my project named "${projectDetails.name}". 
+          Here's the information about my project: ${messages[messages.length - 1].content}
+          
+          IMPORTANT: Provide ONLY the markdown content for the documentation. Do not include any introductory text like "Thank you for..." or "Based on your inputs...". Do not include any concluding text like "Would you like me to..." or "Let me know if...". Start directly with the markdown content and end with the last relevant section.`
         };
         
         // Create a specific message array for this document type
@@ -322,7 +325,10 @@ Always include a "Memory Context" section that shows relationships with other do
           max_tokens: 4000,
         });
         
-        const generatedContent = completion.choices[0].message.content;
+        let generatedContent = completion.choices[0].message.content;
+        
+        // Process the content to remove introductory and concluding remarks
+        generatedContent = cleanGeneratedContent(generatedContent);
         
         // Save the document
         const filename = generateFilename(docType.id);
@@ -393,4 +399,28 @@ app.get('/api/documentation-types', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Documentation chatbot server running on port ${PORT}`);
-}); 
+});
+
+/**
+ * Cleans the generated content by removing introductory and concluding remarks
+ * @param {string} content - The raw content from the LLM
+ * @return {string} - The cleaned content
+ */
+function cleanGeneratedContent(content) {
+  // Remove any "Thank you for..." or "Based on your inputs..." introductory text
+  content = content.replace(/^(Thank you for.*?\n|Based on your inputs.*?\n|I will now generate.*?\n)+/i, '');
+  
+  // Remove any markdown separator at the beginning if it exists
+  content = content.replace(/^---\n/, '');
+  
+  // Remove any concluding questions or offers for additional help
+  content = content.replace(/\n+(Would you like me to.*?|Let me know if.*?|Do you need.*?|I can also.*?)$/i, '');
+  
+  // If there's a trailing markdown separator, keep the content before it
+  const lastSeparatorIndex = content.lastIndexOf('\n---\n');
+  if (lastSeparatorIndex > content.length / 2) { // Only trim if separator is in the latter half
+    content = content.substring(0, lastSeparatorIndex);
+  }
+  
+  return content.trim();
+} 
