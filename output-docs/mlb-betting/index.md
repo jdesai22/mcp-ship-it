@@ -2,7 +2,7 @@
 
 Generated on: 4/19/2025, 4:13:58 PM
 
-## Document Types
+## Document Type
 
 - [Project Overview](./projectoverview.md)
 - [Feature Specifications](./features.md)
