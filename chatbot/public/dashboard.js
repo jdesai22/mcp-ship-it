@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const backToDocumentListBtn = document.getElementById('backToDocumentList');
     const refreshButton = document.getElementById('refreshButton');
     const exportDocumentBtn = document.getElementById('exportDocument');
-    const editDocumentBtn = document.getElementById('editDocument');
     const uploadToMcpBtn = document.getElementById('uploadToMcpBtn');
     const uploadStatusAlert = document.getElementById('uploadStatusAlert');
     
@@ -55,13 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Edit functionality (redirects to chat)
-    editDocumentBtn.addEventListener('click', function() {
-        if (currentDocument) {
-            // This would ideally open the chat interface with context about this document
-            window.location.href = 'index.html';
-        }
-    });
+    // Edit functionality (redirects to chat) - removed as requested
+    // editDocumentBtn.addEventListener('click', function() {
+    //     if (currentDocument) {
+    //         // This would ideally open the chat interface with context about this document
+    //         window.location.href = 'index.html';
+    //     }
+    // });
     
     // Upload to MCP functionality
     uploadToMcpBtn.addEventListener('click', function() {
@@ -302,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             folderIcon.classList.add('bi-folder2-open');
                         }
                     } else {
-                        console.log('Files list not found for project:', projectName);
+                        // console.log('Files list not found for project:', projectName);
                     }
                 } else {
                     // Collapse other folders
@@ -628,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const doc = allDocuments.find(d => d.id === docId);
         if (!doc) {
             hideLoading();
+            showDocumentError('Document not found');
             return;
         }
         
@@ -656,14 +656,26 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error loading document content:', error);
                 // Show error in the document preview area
-                documentContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4>Error Loading Document</h4>
-                        <p>${error.message}</p>
-                        <p>Please try again or contact the administrator.</p>
-                    </div>
-                `;
+                const errorMessage = `${error.message}. Please try again or contact the administrator.`;
+                
+                // Switch to document preview mode
                 showDocumentPreview();
+                
+                // Set basic document metadata
+                previewTitle.textContent = doc.fileName ? doc.fileName.split('/').pop() : 'Document';
+                documentType.textContent = capitalize(doc.documentType || 'Unknown');
+                documentDate.textContent = 'N/A';
+                
+                // Show error in content area
+                if (document.getElementById('documentContent')) {
+                    document.getElementById('documentContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <h4>Error Loading Document</h4>
+                            <p>${errorMessage}</p>
+                        </div>
+                    `;
+                }
+                
                 hideLoading();
             });
     }
@@ -682,16 +694,37 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateObj = new Date(doc.createdAt);
         const formattedDate = dateObj.toLocaleDateString('en-US', { 
             year: 'numeric', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'long', 
+            day: 'numeric' 
         });
         documentDate.textContent = formattedDate;
-        documentProject.textContent = doc.folder || 'Uncategorized';
+        
+        // Set current document
+        currentDocument = doc;
+        
+        // Enable export button
+        exportDocumentBtn.disabled = false;
+        
+        // Add inline edit button for markdown editing
+        const editBtn = document.getElementById('editDocumentBtn');
+        if (!editBtn) {
+            const editBtn = document.createElement('button');
+            editBtn.id = 'editDocumentBtn';
+            editBtn.className = 'btn btn-outline-primary ms-2';
+            editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+            editBtn.addEventListener('click', function() {
+                toggleEditMode(doc);
+            });
+            
+            // Add the edit button next to the export button
+            exportDocumentBtn.parentNode.insertBefore(editBtn, exportDocumentBtn.nextSibling);
+        } else {
+            editBtn.style.display = 'inline-block';
+        }
         
         // Render markdown content
-        documentContent.innerHTML = marked.parse(doc.content);
+        const markdownContent = doc.content || '*No content available*';
+        documentContent.innerHTML = marked.parse(markdownContent);
         
         // Show the preview
         showDocumentPreview();
@@ -708,6 +741,241 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentProject) {
             breadcrumbCurrent.textContent = currentProject.name;
         }
+    }
+    
+    // Toggle between edit mode and view mode
+    function toggleEditMode(doc) {
+        // console.log("toggleEditMode called with doc:", doc ? doc.fileName : "null");
+        
+        // Check if we are already in edit mode
+        const existingTextarea = document.getElementById('markdownEditor');
+        if (existingTextarea) {
+            // console.log("Already in edit mode, exiting...");
+            exitEditMode(doc);
+            return;
+        }
+        
+        // Get current content div
+        const contentDiv = document.getElementById('documentContent');
+        if (!contentDiv) {
+            console.error("Document content div not found");
+            return;
+        }
+        // console.log("Found content div");
+        
+        // Create textarea for editing
+        const textarea = document.createElement('textarea');
+        textarea.id = 'markdownEditor';
+        textarea.className = 'form-control';
+        textarea.style.height = '70vh';
+        textarea.style.width = '100%';
+        textarea.value = doc.content || '';
+        // console.log("Created textarea with content length:", textarea.value.length);
+        
+        // Replace content div with textarea
+        const contentContainer = contentDiv.parentNode;
+        contentContainer.replaceChild(textarea, contentDiv);
+        // console.log("Replaced content div with textarea");
+        
+        // Hide the original edit button so we don't have duplicate functionality
+        const editBtn = document.getElementById('editDocumentBtn');
+        if (editBtn) {
+            editBtn.style.display = 'none';
+            // console.log("Hidden original edit button");
+        }
+        
+        // Remove any existing cancel buttons to prevent duplicates
+        const existingCancelBtns = document.querySelectorAll('#cancelEditBtn');
+        existingCancelBtns.forEach(btn => {
+            if (btn && btn.parentNode) {
+                btn.parentNode.removeChild(btn);
+                // console.log("Removed existing cancel button");
+            }
+        });
+        
+        // Create a container for the buttons
+        let buttonsContainer = document.querySelector('.document-edit-buttons');
+        if (!buttonsContainer) {
+            buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'document-edit-buttons mt-2 d-flex justify-content-end';
+            textarea.parentNode.insertBefore(buttonsContainer, textarea.nextSibling);
+            // console.log("Created new buttons container");
+        }
+        
+        // Create Save button
+        const saveBtn = document.createElement('button');
+        saveBtn.id = 'saveDocumentBtn';
+        saveBtn.className = 'btn btn-primary me-2';
+        saveBtn.innerHTML = '<i class="bi bi-check2"></i> Save';
+        saveBtn.addEventListener('click', function() {
+            saveDocument(doc);
+        });
+        buttonsContainer.appendChild(saveBtn);
+        // console.log("Added Save button to container");
+        
+        // Create Cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelEditBtn';
+        cancelBtn.className = 'btn btn-outline-secondary';
+        cancelBtn.innerHTML = '<i class="bi bi-x"></i> Cancel';
+        cancelBtn.addEventListener('click', function() {
+            exitEditMode(doc, false);
+        });
+        buttonsContainer.appendChild(cancelBtn);
+        // console.log("Added Cancel button to container");
+        
+        // console.log("toggleEditMode completed - now in edit mode");
+    }
+    
+    // Exit edit mode and return to view mode
+    function exitEditMode(doc, saveChanges = true) {
+        // console.log("exitEditMode called with doc:", doc ? doc.fileName : "null", "saveChanges:", saveChanges);
+        
+        // Get current editor
+        const textarea = document.getElementById('markdownEditor');
+        if (!textarea) {
+            console.error("Textarea not found in exitEditMode");
+            return;
+        }
+        // console.log("Found textarea with content length:", textarea.value ? textarea.value.length : 0);
+        
+        // If we're not saving changes, make sure to keep the original content
+        if (!saveChanges) {
+            // console.log("Discarding changes and keeping original content");
+        }
+        
+        // Get the parent container
+        const contentContainer = textarea.parentNode;
+        // console.log("Found parent container:", !!contentContainer);
+        
+        // Create a new content div but don't reassign the documentContent variable
+        const newContentDiv = document.createElement('div');
+        newContentDiv.id = 'documentContent';
+        newContentDiv.className = 'doc-preview markdown-content';
+        // console.log("Created new content div");
+        
+        // Replace textarea with the new content div
+        contentContainer.replaceChild(newContentDiv, textarea);
+        // console.log("Replaced textarea with new content div");
+        
+        // Render markdown content in the new div
+        try {
+            newContentDiv.innerHTML = marked.parse(doc.content || '*No content available*');
+            // console.log("Rendered markdown content, length:", doc.content ? doc.content.length : 0);
+        } catch (error) {
+            console.error("Error rendering markdown:", error);
+            newContentDiv.innerHTML = "<p>Error rendering markdown</p>";
+        }
+        
+        // Remove the custom buttons container we created
+        const buttonsContainer = document.querySelector('.document-edit-buttons');
+        if (buttonsContainer && buttonsContainer.parentNode) {
+            buttonsContainer.parentNode.removeChild(buttonsContainer);
+            // console.log("Removed edit buttons container");
+        }
+        
+        // Restore the original edit button
+        const editBtn = document.getElementById('editDocumentBtn');
+        if (editBtn) {
+            // First check if it's just hidden
+            if (editBtn.style.display === 'none') {
+                // Simply unhide it
+                editBtn.style.display = 'inline-block';
+                // console.log("Restored original edit button visibility");
+            } else {
+                // Otherwise, we need to recreate it
+                const newEditBtn = document.createElement('button');
+                newEditBtn.id = 'editDocumentBtn';
+                newEditBtn.className = 'btn btn-outline-primary ms-2';
+                newEditBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+                
+                // Add the edit mode event listener
+                newEditBtn.addEventListener('click', function() {
+                    toggleEditMode(doc);
+                });
+                
+                // Find the export button to place this next to it
+                const exportBtn = document.getElementById('exportDocument');
+                if (exportBtn && exportBtn.parentNode) {
+                    exportBtn.parentNode.insertBefore(newEditBtn, exportBtn.nextSibling);
+                    // console.log("Recreated and added edit button next to export button");
+                }
+            }
+        } else {
+            // Need to create a new edit button from scratch
+            const newEditBtn = document.createElement('button');
+            newEditBtn.id = 'editDocumentBtn';
+            newEditBtn.className = 'btn btn-outline-primary ms-2';
+            newEditBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+            
+            // Add the edit mode event listener
+            newEditBtn.addEventListener('click', function() {
+                toggleEditMode(doc);
+            });
+            
+            // Find the export button to place this next to it
+            const exportBtn = document.getElementById('exportDocument');
+            if (exportBtn && exportBtn.parentNode) {
+                exportBtn.parentNode.insertBefore(newEditBtn, exportBtn.nextSibling);
+                // console.log("Created new edit button next to export button");
+            } else {
+                console.warn("Export button not found, could not add edit button");
+            }
+        }
+        
+        // Remove any remaining cancel buttons
+        const cancelButtons = document.querySelectorAll('#cancelEditBtn');
+        // console.log("Found cancel buttons:", cancelButtons.length);
+        
+        cancelButtons.forEach(btn => {
+            if (btn && btn.parentNode) {
+                btn.parentNode.removeChild(btn);
+                // console.log("Removed a cancel button");
+            }
+        });
+        
+        // console.log("exitEditMode completed");
+    }
+    
+    // Show success message
+    function showSuccessMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Find a suitable container for the alert
+        let container = document.getElementById('documentPreview');
+        if (!container) {
+            // Try to find the main container as a fallback
+            container = document.querySelector('.dashboard-content');
+            if (!container) {
+                // Last resort, add to body
+                container = document.body;
+            }
+        }
+        
+        // Insert at the top of the container
+        if (container.firstChild) {
+            container.insertBefore(alertDiv, container.firstChild);
+        } else {
+            container.appendChild(alertDiv);
+        }
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv && alertDiv.classList) {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (alertDiv && alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 150);
+            }
+        }, 5000);
     }
     
     // Go back to project view
@@ -801,5 +1069,141 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide upload status alert
     function hideUploadStatus() {
         uploadStatusAlert.classList.add('d-none');
+    }
+    
+    // Show error message for document operations
+    function showDocumentError(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> 
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Find a suitable container for the alert
+        let container = document.getElementById('documentPreview');
+        if (!container) {
+            // Try to find the main container as a fallback
+            container = document.querySelector('.dashboard-content');
+            if (!container) {
+                // Last resort, add to body
+                container = document.body;
+            }
+        }
+        
+        // Insert at the top of the container
+        if (container.firstChild) {
+            container.insertBefore(alertDiv, container.firstChild);
+        } else {
+            container.appendChild(alertDiv);
+        }
+        
+        // Auto dismiss after 8 seconds
+        setTimeout(() => {
+            if (alertDiv && alertDiv.classList) {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (alertDiv && alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 150);
+            }
+        }, 8000);
+    }
+    
+    // Save document content to the server
+    function saveDocument(doc) {
+        // console.log("saveDocument function called with doc:", doc ? doc.fileName : "null");
+        
+        // Save the edited content
+        const textarea = document.getElementById('markdownEditor');
+        if (!textarea) {
+            console.error('Textarea not found when trying to save');
+            showDocumentError('Could not save document: Editor not found');
+            return;
+        }
+        
+        const newContent = textarea.value;
+        // console.log("New content to save:", {
+        //     contentLength: newContent.length,
+        //     firstFewChars: newContent.substring(0, 50),
+        //     lastFewChars: newContent.substring(newContent.length - 50)
+        // });
+        
+        // Log save attempt
+        // console.log('Attempting to save document:', doc.fileName);
+        
+        // Show loading indicator
+        showLoading();
+        
+        // Ensure the filePath is correctly formatted
+        let filePath = doc.fileName;
+        
+        // First, normalize the path by removing any existing 'output-docs/' prefix
+        if (filePath.startsWith('output-docs/')) {
+            filePath = filePath.replace('output-docs/', '');
+            // console.log("Removed output-docs/ prefix from filePath:", filePath);
+        }
+        
+        // Now, ensure the path starts with 'output-docs/'
+        if (!filePath.startsWith('output-docs/')) {
+            filePath = 'output-docs/' + filePath;
+            // console.log("Added output-docs/ prefix to filePath:", filePath);
+        }
+        
+        // console.log("Sending save request with filePath:", filePath);
+        
+        // Send to server to save
+        fetch('/api/save-document', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filePath: filePath,
+                content: newContent
+            })
+        })
+        .then(response => {
+            // console.log("Server response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // console.log("Server response data:", data);
+            if (data.success) {
+                // console.log(`Document successfully saved to: ${filePath}`);
+                
+                // Update the document content
+                doc.content = newContent;
+                
+                // Switch back to view mode
+                exitEditMode(doc, true);
+                
+                // Show success message with file path
+                showSuccessMessage(`Document saved successfully to: ${filePath}`);
+                
+                // Refresh the document list to reflect any changes
+                setTimeout(() => {
+                    if (currentProject) {
+                        // console.log("Refreshing project documents");
+                        renderProjectDocuments(currentProject);
+                    }
+                }, 1000);
+            } else {
+                console.error('Server reported error while saving document:', data.error);
+                showDocumentError('Failed to save document: ' + (data.error || 'Unknown error'));
+            }
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error saving document:', error);
+            showDocumentError('Failed to save document: ' + error.message);
+            hideLoading();
+        });
     }
 }); 
