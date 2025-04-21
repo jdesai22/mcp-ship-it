@@ -4,8 +4,10 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FileExplorer from '@/components/FileExplorer';
-import { useAppContext } from '@/context/AppContext'; // Import context hook
+import { useAppContext } from '@/context/AppContext';
+import { toast } from "sonner";
 
 // Placeholder type for Project data - will be refined later
 interface Project {
@@ -20,8 +22,24 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onFileSelect }: SidebarProps) {
-  // Get actions from context
-  const { navigateToChat, fetchDocuments, navigateToProject, documents, isLoadingDocs } = useAppContext();
+  const {
+    currentView,
+    docTypes, 
+    currentProjectName,
+    setCurrentProjectName,
+    selectedDocType,
+    setSelectedDocType,
+    navigateToChat,
+    navigateToDashboard,
+    fetchDocuments,
+    navigateToProject,
+    documents,
+    isLoadingDocs,
+    sidebarSearchTerm,
+    setSidebarSearchTerm,
+    generateAllDocuments,
+    actionLoading,
+  } = useAppContext();
 
   // Placeholder data - In reality, this would come from props or state management
   const projects: Project[] = [
@@ -31,64 +49,126 @@ export default function Sidebar({ onFileSelect }: SidebarProps) {
   ];
   const projectsCount = projects.length;
 
-  // TODO: Implement search functionality
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Search query:', event.target.value);
-    // This would likely involve local state filtering of the `documents` from context
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSidebarSearchTerm(event.target.value);
   };
 
-  // Connect buttons to context actions
   const handleCreateNew = () => {
-    console.log('Action: Create New (Resetting Chat)');
-    navigateToChat({ reset: true }); // Call with reset option
+    navigateToChat({ reset: true });
   };
 
   const handleRefresh = () => {
-      console.log('Action: Refresh Projects');
-      fetchDocuments(); // Trigger fetch from context
-  }
+    fetchDocuments();
+  };
 
-  // Use navigateToProject from context when a project is selected
   const handleProjectSelect = (projectName: string) => {
-      console.log('Sidebar: Project selected ->', projectName);
-      navigateToProject(projectName); // Use context action
-  }
+    navigateToProject(projectName);
+  };
 
-  // Calculate project count from context data
-  const projectCount = isLoadingDocs ? '...' : 
-      new Set(documents.map(d => d.projectName).filter(Boolean)).size;
+  // Handler for Generate All button
+  const handleGenerateAll = async () => {
+    if (!currentProjectName) {
+      toast.error("Please enter a Project Name before generating all documents.");
+      return;
+    }
+    // For now, we'll pass the project name as the description too.
+    // A textarea could be added for a proper description.
+    const description = `Project focused on: ${currentProjectName}`;
+    toast.info(`Generating all documents for ${currentProjectName}...`);
+    try {
+      await generateAllDocuments(currentProjectName, description);
+      toast.success(`Successfully generated documents for ${currentProjectName}.`);
+      // Optionally navigate to the project view after generation
+      // navigateToProject(currentProjectName);
+    } catch (error: any) {
+      // Error toast is handled by the global effect in page.tsx
+      console.error('Generate all failed:', error);
+    }
+  };
 
-  return (
-    <aside className="flex flex-col h-full border-r border-border p-4 space-y-4 min-w-[250px] max-w-[300px]">
-      {/* Title Section */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold interactive-glow">Projects</h2>
-        <span className="text-sm text-muted-foreground">({projectCount})</span>
+  const renderChatSidebar = () => (
+    <>
+      <h2 className="text-lg font-semibold interactive-glow">Generation Settings</h2>
+      
+      <div className="space-y-2">
+        <label htmlFor="projectNameInput" className="text-sm font-medium text-muted-foreground">Project Name</label>
+        <Input 
+          id="projectNameInput"
+          placeholder="Enter project name..."
+          value={currentProjectName}
+          onChange={(e) => setCurrentProjectName(e.target.value)}
+          className="interactive-glow focus:border-glow-strong"
+        />
       </div>
 
-      {/* Search Input */}
+      <div className="space-y-2">
+        <label htmlFor="docTypeSelect" className="text-sm font-medium text-muted-foreground">Document Type (Optional)</label>
+        <Select 
+          value={selectedDocType || ''} 
+          onValueChange={(value) => setSelectedDocType(value === '__NONE__' ? null : value)}
+        >
+          <SelectTrigger id="docTypeSelect" className="interactive-glow focus:border-glow-strong">
+            <SelectValue placeholder="Optional Single Generation" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__NONE__">-- None --</SelectItem>
+            {docTypes.map(type => (
+              <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2 mt-auto"> {/* Push buttons towards bottom */} 
+        <Button 
+          onClick={handleGenerateAll} 
+          variant="outline" 
+          className="w-full interactive-glow"
+          disabled={!currentProjectName || actionLoading['generateAll']}
+        >
+          {actionLoading['generateAll'] ? 'Generating...' : 'Generate All Docs'}
+        </Button>
+        <Button onClick={handleRefresh} variant="outline" className="w-full interactive-glow" disabled={isLoadingDocs}>
+          &#x21bb; {isLoadingDocs ? 'Refreshing List...' : 'Refresh Doc List'}
+        </Button>
+        <Button onClick={() => navigateToDashboard()} variant="outline" className="w-full interactive-glow">
+          [ View Dashboard ]
+        </Button>
+      </div>
+
+    </>
+  );
+
+  const renderDashboardSidebar = () => (
+    <>
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold interactive-glow">Projects</h2>
+        <span className="text-sm text-muted-foreground">({isLoadingDocs ? '...' : new Set(documents.map(d => d.projectName).filter(Boolean)).size})</span>
+      </div>
+
       <div>
         <Input
           type="search"
-          placeholder="Search projects..."
-          onChange={handleSearch}
+          placeholder="Search projects/files..."
+          value={sidebarSearchTerm}
+          onChange={handleSearchChange}
           className="interactive-glow focus:border-glow-strong"
         />
       </div>
 
       <Separator />
 
-      {/* File Explorer Area - Pass the onFileSelect prop down */}
       <div className="flex-grow overflow-hidden border border-border rounded p-1 border-glow">
-          <FileExplorer 
-            onProjectSelect={handleProjectSelect}
-            onFileSelect={onFileSelect} // Pass the received prop
-          />
+        <FileExplorer 
+          onProjectSelect={handleProjectSelect}
+          onFileSelect={onFileSelect} 
+        />
       </div>
 
       <Separator />
 
-      {/* Action Buttons */}
       <div className="space-y-2">
         <Button onClick={handleCreateNew} variant="outline" className="w-full interactive-glow">
           + Create New Documentation
@@ -97,16 +177,21 @@ export default function Sidebar({ onFileSelect }: SidebarProps) {
           &#x21bb; {isLoadingDocs ? 'Refreshing...' : 'Refresh Projects'}
         </Button>
       </div>
-
+      
       <Separator />
 
-      {/* Quick Tips */}
       <div className="text-xs text-muted-foreground space-y-1">
         <h3 className="font-semibold text-foreground mb-1">Quick Tips:</h3>
         <p>* Click Project name for details</p>
         <p>* Click File name to view</p>
-        <p>* Use search (TBD)</p>
+        <p>* Use search to filter</p>
       </div>
+    </>
+  );
+
+  return (
+    <aside className="flex flex-col h-full border-r border-border p-4 space-y-4 min-w-[250px] max-w-[300px]">
+      {currentView === 'chat' ? renderChatSidebar() : renderDashboardSidebar()}
     </aside>
   );
 } 

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppProvider, useAppContext } from '@/context/AppContext';
 import ChatInterface from '@/components/ChatInterface';
 import Sidebar from '@/components/Sidebar';
@@ -8,6 +8,8 @@ import DashboardView from '@/components/DashboardView';
 import DocumentView from '@/components/DocumentView';
 import ProjectView from '@/components/ProjectView';
 import { Button } from '@/components/ui/button';
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // Root component remains a Server Component (can't use hooks)
 export default function HomePage() {
@@ -15,6 +17,7 @@ export default function HomePage() {
     <AppProvider>
       {/* Home is now a Client Component because it uses the context hook */}
       <Home />
+      <Toaster theme="dark" position="top-center" />
     </AppProvider>
   );
 }
@@ -27,11 +30,23 @@ function Home() {
     selectedProjectId,
     selectedDocId,
     isViewedDocLoading,
+    actionLoading,
     navigateToChat,
     navigateToDashboard,
     navigateToProject,
     navigateToDocument,
+    actionError,
   } = useAppContext();
+
+  // Effect to show toast notifications for action errors
+  useEffect(() => {
+      Object.entries(actionError).forEach(([key, error]) => {
+          if (error) {
+              toast.error(`Action [${key}] failed: ${error}`);
+              // TODO: Maybe add a way to clear errors from context after showing?
+          }
+      });
+  }, [actionError]);
 
   // Function to render the main content based on the current view from context
   const renderMainContent = () => {
@@ -50,7 +65,19 @@ function Home() {
 
   // Determine button text and action based on context view
   const toggleButtonText = currentView === 'chat' ? '[ View Dashboard ]' : '[ Go to Chat ]';
-  const toggleButtonAction = currentView === 'chat' ? navigateToDashboard : navigateToChat;
+  
+  // Wrap context calls in proper event handlers
+  const handleToggleClick = () => {
+    if (currentView === 'chat') {
+      navigateToDashboard();
+    } else {
+      navigateToChat(); // Call without options for default behavior
+    }
+  };
+
+  // Determine overall loading status for the status bar
+  const isLoading = isViewedDocLoading || actionLoading['fetchDocs'] || actionLoading['generateAll'] || Object.keys(actionLoading).some(k => k.startsWith('uploadMcp') && actionLoading[k]);
+  const statusText = isLoading ? 'Processing...' : 'Ready';
 
   return (
     <main className="flex h-screen font-mono overflow-hidden">
@@ -65,7 +92,7 @@ function Home() {
           <Button 
             variant="outline"
             size="sm"
-            onClick={toggleButtonAction}
+            onClick={handleToggleClick}
             className="interactive-glow"
           >
             {toggleButtonText}
@@ -79,7 +106,7 @@ function Home() {
 
         {/* Footer/Status Bar uses context state */}
         <div className="mt-4 text-center text-xs text-muted-foreground">
-          Status: {isViewedDocLoading ? 'Loading Doc...' : 'Ready'} | View: {currentView} | Doc: {selectedDocId || '[None]'} | Project: {selectedProjectId || '[None]'} | Press [?] for help
+          Status: {statusText} | View: {currentView} | Doc: {selectedDocId || '[None]'} | Project: {selectedProjectId || '[None]'} | Press [?] for help
         </div>
       </div>
     </main>

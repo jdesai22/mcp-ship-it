@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner"; // Import toast
 
 export default function ProjectView() {
   const {
@@ -12,7 +13,25 @@ export default function ProjectView() {
     docListError,
     navigateToDocument,
     navigateToDashboard, // Action to go back
+    uploadProjectToMcp, // Get upload action
+    actionLoading, // Get loading state
   } = useAppContext();
+
+  const handleUpload = async () => {
+    if (!selectedProjectId) return;
+
+    toast.info(`Uploading documents for ${selectedProjectId} to MCP...`);
+    try {
+      const result = await uploadProjectToMcp(selectedProjectId);
+      toast.success(`Upload complete for ${selectedProjectId}: ${result.message || 'Success'}`,
+       {
+        description: `Uploaded: ${result.uploadedCount}, Failed: ${result.failedCount}`,
+       });
+    } catch (error: any) {
+      // Global error toast handles detailed message
+      console.error('Upload failed:', error);
+    }
+  };
 
   if (!selectedProjectId) {
     // Should ideally not happen if view state is managed correctly
@@ -29,6 +48,8 @@ export default function ProjectView() {
 
   // Filter documents for the selected project
   const projectDocuments = documents.filter(doc => doc.projectName === selectedProjectId);
+  const uploadActionKey = `uploadMcp_${selectedProjectId}`;
+  const isUploading = actionLoading[uploadActionKey];
 
   return (
     <div className="h-full p-4">
@@ -37,14 +58,28 @@ export default function ProjectView() {
         <h2 className="text-xl font-semibold interactive-glow truncate">
           Project: {selectedProjectId}
         </h2>
-        <Button 
-            variant="outline"
-            size="sm"
-            onClick={navigateToDashboard} // Go back to dashboard view
-            className="interactive-glow"
-          >
-            [ Back to Projects ]
-          </Button>
+        {/* Group buttons together */}
+        <div className="flex space-x-2">
+           <Button 
+              onClick={handleUpload}
+              variant="outline"
+              size="sm"
+              className="interactive-glow"
+              disabled={isUploading || projectDocuments.length === 0}
+              title={projectDocuments.length === 0 ? "No documents to upload" : "Upload all project documents to MCP server"}
+            >
+              {isUploading ? 'Uploading...' : 'Upload to MCP'}
+            </Button>
+            <Button 
+                variant="outline"
+                size="sm"
+                onClick={navigateToDashboard} // Go back to dashboard view
+                className="interactive-glow"
+                disabled={isUploading} // Disable while uploading
+              >
+                [ Back to Projects ]
+            </Button>
+        </div>
       </div>
 
       {/* Document List for the project */}

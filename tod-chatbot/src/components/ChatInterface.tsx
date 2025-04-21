@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAppContext } from "@/context/AppContext"; // Import context hook
+import { useAppContext } from "@/context/AppContext";
+import { toast } from "sonner"; // Import toast
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -14,14 +15,19 @@ interface Message {
 // Define initial message outside component for reuse
 const initialSystemMessage: Message = {
   role: 'system',
-  content: 'System Initialized. Enter project details or ask a question.',
+  content: 'System Initialized. Enter project name and optionally select doc type.',
 };
 
 export default function ChatInterface() {
   // Get relevant state/actions from context
-  const { selectedProjectId, /* selectedDocType, */ fetchDocuments, resetChatTrigger } = useAppContext(); 
-  // selectedDocType would need to be added to context if we have UI to set it
-
+  const { 
+    selectedProjectId, // Project ID is now set via navigateToProject
+    currentProjectName, // Use currentProjectName from context for saving
+    selectedDocType, 
+    fetchDocuments, 
+    resetChatTrigger 
+  } = useAppContext();
+  
   const [messages, setMessages] = useState<Message[]>([initialSystemMessage]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,27 +56,31 @@ export default function ChatInterface() {
     }
   }, [messages]);
 
-  const handleSendMessage = async (save: boolean = false) => { // Add save flag parameter
+  const handleSendMessage = async (save: boolean = false) => {
+    if (save && (!currentProjectName || !selectedDocType)) {
+        toast.error("Project Name and Document Type must be set to save.");
+        return;
+    }
     if (!inputMessage.trim() || isLoading) return;
 
     const newUserMessage: Message = { role: 'user', content: inputMessage };
-    // Add user message optimistically
     const currentMessages = [...messages, newUserMessage];
     setMessages(currentMessages);
+    const userMsgContent = inputMessage; // Store before clearing
     setInputMessage('');
     setIsLoading(true);
 
-    // Prepare history for API (exclude the latest user message we just added)
     const historyForApi = currentMessages.slice(0, -1).map(({ role, content }) => ({ role, content }));
 
-    // --- Call API --- 
     try {
       const payload = {
-        userMessage: newUserMessage.content,
+        userMessage: userMsgContent,
         history: historyForApi,
-        projectName: selectedProjectId, // Use projectName from context if available
-        // documentType: selectedDocType, // Use docType from context if available
-        saveDoc: save, // Pass the save flag
+        // Use currentProjectName from context, which is updated by the sidebar input
+        projectName: currentProjectName, 
+        // Use selectedDocType from context, updated by sidebar select
+        documentType: save ? selectedDocType : null, // Only pass doc type if saving
+        saveDoc: save,
       };
       console.log('Sending payload to /api/chat:', payload);
 
@@ -83,14 +93,8 @@ export default function ChatInterface() {
       });
 
       if (!response.ok) {
-        // Attempt to parse error from backend
         let errorMsg = `Error: ${response.statusText} (Status: ${response.status})`;
-        try {
-            const errorData = await response.json();
-            errorMsg = errorData.error || errorMsg;
-        } catch (parseError) {
-            // Ignore if error response is not JSON
-        }
+        try { const errorData = await response.json(); errorMsg = errorData.error || errorMsg; } catch {} 
         throw new Error(errorMsg);
       }
 
@@ -101,11 +105,7 @@ export default function ChatInterface() {
         setMessages((prevMessages) => [...prevMessages, assistantMessage]);
         
         if (data.savedDocumentPath) {
-            console.log(`Document saved at: ${data.savedDocumentPath}`);
-            // Add system message confirming save
-            const systemSaveMsg: Message = { role: 'system', content: `Document saved: ${data.savedDocumentPath}` };
-            setMessages((prevMessages) => [...prevMessages, systemSaveMsg]);
-            // Refresh document list after saving
+            toast.success(`Document saved: ${data.savedDocumentPath}`); // Use toast for save success
             fetchDocuments(); 
         }
       } else {
@@ -113,12 +113,12 @@ export default function ChatInterface() {
       }
 
     } catch (error: any) {
+      // Error toast is handled globally in page.tsx
       console.error('Error sending message:', error);
       const errorMessage: Message = {
         role: 'system',
-        content: `Error: ${error.message || 'Could not get response.'}`, // Display the specific error
+        content: `Error: ${error.message || 'Could not get response.'}`, 
       };
-      // Add error message to the chat
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -131,23 +131,18 @@ export default function ChatInterface() {
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Prevent newline in input
-      handleSendMessage(); // Default send without saving
+      event.preventDefault();
+      handleSendMessage();
     }
-    // Example: Add Ctrl+Enter or Shift+Enter to save?
-    // if (event.key === 'Enter' && (event.ctrlKey || event.shiftKey)) {
-    //    event.preventDefault();
-    //    handleSendMessage(true); // Send with save flag
-    // }
   };
 
-  // TODO: Add a dedicated "Save Document" button
-  // This button would call handleSendMessage(true)
-  // It should probably be disabled if projectName/docType aren't set.
-
   return (
-    <div className="flex flex-col h-full max-h-[70vh]">
-      {/* Message Display Area */}
+    <div className="flex flex-col h-full">
+      {/* Header Area (Optional: could show current project/doc type) */}
+      <div className="mb-2 text-xs text-muted-foreground border-b border-border pb-1">
+          Project: {currentProjectName || '[Not Set]'} | Doc Type: {selectedDocType || '[Not Set]'} 
+      </div>
+      
       <ScrollArea className="flex-grow border border-border rounded mb-4 p-4 border-glow" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((msg, index) => (
@@ -165,7 +160,6 @@ export default function ChatInterface() {
         </div>
       </ScrollArea>
 
-      {/* Input Area */}
       <div className="flex space-x-2 border-t border-border pt-4">
         <Input
           type="text"
@@ -176,12 +170,19 @@ export default function ChatInterface() {
           disabled={isLoading}
           className="flex-grow interactive-glow focus:border-glow-strong"
         />
-        {/* Standard Send Button */}
         <Button onClick={() => handleSendMessage(false)} disabled={isLoading || !inputMessage.trim()} className="interactive-glow">
           {isLoading ? 'Sending...' : 'Send'}
         </Button>
-        {/* Placeholder for Save Button */}
-        {/* <Button onClick={() => handleSendMessage(true)} disabled={isLoading || !selectedProjectId /* || !selectedDocType * / } variant="outline" className="interactive-glow">Save</Button> */}
+        {/* Save Button Implementation */}
+        <Button 
+          onClick={() => handleSendMessage(true)} 
+          disabled={isLoading || !currentProjectName || !selectedDocType} 
+          variant="outline" 
+          className="interactive-glow"
+          title={!currentProjectName || !selectedDocType ? "Set Project Name and Doc Type to Save" : "Save current conversation as selected Doc Type"}
+         >
+             Save Doc
+        </Button>
       </div>
     </div>
   );

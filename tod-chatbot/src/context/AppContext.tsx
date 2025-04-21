@@ -15,28 +15,47 @@ interface Document {
   content?: string | null; // Optional content field
 }
 
+// Added DocType definition
+export interface DocType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface AppContextProps {
   // State
   currentView: ViewState;
-  documents: Document[];
+  documents: Document[]; // List of all saved documents
+  docTypes: DocType[]; // List of available document types
   isLoadingDocs: boolean;
   docListError: string | null;
-  selectedProjectId: string | null;
-  selectedDocId: string | null;
+  currentProjectName: string; // Project name currently being worked on in chat
+  selectedProjectId: string | null; // Project selected for viewing (in project/doc view)
+  selectedDocType: string | null; // Document type selected in chat sidebar
+  selectedDocId: string | null; // Specific document ID being viewed
   viewedDocContent: string | null;
   isViewedDocLoading: boolean;
   viewedDocError: string | null;
   resetChatTrigger: number; // Added state to trigger chat reset
+  sidebarSearchTerm: string; // Search term for dashboard sidebar
+  actionLoading: { [key: string]: boolean }; // Track loading states for actions
+  actionError: { [key: string]: string | null }; // Track errors for actions
 
   // Actions
   setCurrentView: (view: ViewState) => void;
+  setCurrentProjectName: (name: string) => void;
   setSelectedProjectId: (projectId: string | null) => void;
+  setSelectedDocType: (docTypeId: string | null) => void;
+  setSidebarSearchTerm: (term: string) => void;
   fetchDocuments: () => Promise<void>;
+  fetchDocTypes: () => Promise<void>;
   fetchSingleDocument: (documentId: string) => Promise<void>;
   navigateToDocument: (documentId: string) => void;
   navigateToDashboard: () => void;
   navigateToChat: (options?: { reset?: boolean }) => void; // Modified signature
   navigateToProject: (projectId: string) => void;
+  generateAllDocuments: (projectName: string, projectDescription: string) => Promise<void>; // Added action
+  uploadProjectToMcp: (projectName: string) => Promise<any>; // Added action, returns result
 }
 
 // --- Context Creation --- 
@@ -50,17 +69,39 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [currentView, setCurrentView] = useState<ViewState>('chat');
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [docTypes, setDocTypes] = useState<DocType[]>([]); // State for doc types
   const [isLoadingDocs, setIsLoadingDocs] = useState<boolean>(false);
   const [docListError, setDocListError] = useState<string | null>(null);
+  const [currentProjectName, setCurrentProjectName] = useState<string>(''); // State for project name input
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState<string | null>(null); // State for selected doc type
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [viewedDocContent, setViewedDocContent] = useState<string | null>(null);
   const [isViewedDocLoading, setIsViewedDocLoading] = useState<boolean>(false);
   const [viewedDocError, setViewedDocError] = useState<string | null>(null);
   const [resetChatTrigger, setResetChatTrigger] = useState<number>(0); // Initialize trigger state
+  const [sidebarSearchTerm, setSidebarSearchTerm] = useState<string>(''); // State for search
+  const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
+  const [actionError, setActionError] = useState<{ [key: string]: string | null }>({});
+
+  // --- Helper for Actions --- 
+  const handleAction = async (actionKey: string, actionFn: () => Promise<any>) => {
+      setActionLoading(prev => ({ ...prev, [actionKey]: true }));
+      setActionError(prev => ({ ...prev, [actionKey]: null }));
+      try {
+          const result = await actionFn();
+          setActionLoading(prev => ({ ...prev, [actionKey]: false }));
+          return result;
+      } catch (error: any) {
+          console.error(`Error during action [${actionKey}]:`, error);
+          setActionError(prev => ({ ...prev, [actionKey]: error.message || `Failed to execute ${actionKey}` }));
+          setActionLoading(prev => ({ ...prev, [actionKey]: false }));
+          throw error; // Re-throw if specific handling is needed
+      }
+  };
 
   // --- Data Fetching Callbacks --- 
-  const fetchDocuments = useCallback(async () => {
+  const fetchDocuments = useCallback(async () => handleAction('fetchDocs', async () => {
     console.log('Fetching document list...');
     setIsLoadingDocs(true);
     setDocListError(null);
@@ -78,9 +119,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     } finally {
       setIsLoadingDocs(false);
     }
-  }, []);
+  }), []);
 
-  const fetchSingleDocument = useCallback(async (documentId: string) => {
+  const fetchDocTypes = useCallback(async () => handleAction('fetchDocTypes', async () => {
+    console.log('Fetching document types...');
+    const response = await fetch('/api/document-types');
+    if (!response.ok) throw new Error(`Failed to fetch document types: ${response.statusText}`);
+    const data: DocType[] = await response.json();
+    setDocTypes(data);
+  }), []);
+
+  const fetchSingleDocument = useCallback(async (documentId: string) => handleAction('fetchSingleDoc', async () => {
     if (!documentId) return;
     console.log('Fetching single document content:', documentId);
     setIsViewedDocLoading(true);
@@ -105,7 +154,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     } finally {
       setIsViewedDocLoading(false);
     }
-  }, []);
+  }), []);
 
   // --- Navigation Actions --- 
   const navigateToDocument = useCallback((documentId: string) => {
@@ -118,6 +167,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setSelectedDocId(null); // Clear document selection
       setSelectedProjectId(null);
       setViewedDocContent(null);
+      setSidebarSearchTerm(''); // Clear search on view change
   }, []);
 
   const navigateToChat = useCallback((options?: { reset?: boolean }) => {
@@ -125,6 +175,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setSelectedDocId(null);
       setSelectedProjectId(null); // Clear project selection when going to chat
       setViewedDocContent(null);
+      setSelectedDocType(null); // Clear doc type selection when going to chat
+      setCurrentProjectName(''); // Clear project name input
       if (options?.reset) {
           console.log('Resetting chat trigger...');
           setResetChatTrigger(prev => prev + 1); // Increment trigger
@@ -143,28 +195,80 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Fetch initial document list on mount
   useEffect(() => {
     fetchDocuments();
-  }, [fetchDocuments]);
+    fetchDocTypes();
+  }, [fetchDocuments, fetchDocTypes]);
+
+  // --- Other Actions --- 
+  const generateAllDocuments = useCallback(async (projectName: string, projectDescription: string) => handleAction('generateAll', async () => {
+      console.log(`Generating all documents for: ${projectName}`);
+      if (!projectName || !projectDescription) {
+          throw new Error('Project Name and Description are required to generate all documents.');
+      }
+      const response = await fetch('/api/generate-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectName, projectDescription }),
+      });
+      if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to generate documents (Status: ${response.status})`);
+      }
+      const result = await response.json();
+      console.log('Generate all result:', result);
+      await fetchDocuments(); // Refresh doc list after generation
+      return result;
+  }), [fetchDocuments]);
+
+  const uploadProjectToMcp = useCallback(async (projectName: string) => handleAction(`uploadMcp_${projectName}`, async () => {
+      console.log(`Uploading project to MCP: ${projectName}`);
+      if (!projectName) {
+          throw new Error('Project Name is required to upload.');
+      }
+      const response = await fetch('/api/upload-to-mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectName }),
+      });
+      const result = await response.json(); // Get JSON response regardless of status
+      if (!response.ok) {
+          throw new Error(result.error || `Failed to upload to MCP (Status: ${response.status})`);
+      }
+      console.log('Upload to MCP result:', result);
+      return result;
+  }), []);
 
   // --- Value Provided by Context --- 
   const value = {
     currentView,
     documents,
+    docTypes,
     isLoadingDocs,
     docListError,
+    currentProjectName,
     selectedProjectId,
+    selectedDocType,
     selectedDocId,
     viewedDocContent,
     isViewedDocLoading,
     viewedDocError,
     resetChatTrigger, // Expose trigger
+    sidebarSearchTerm,
+    actionLoading,
+    actionError,
     setCurrentView, // Expose direct setter if needed, but prefer navigation actions
+    setCurrentProjectName,
     setSelectedProjectId,
+    setSelectedDocType,
+    setSidebarSearchTerm,
     fetchDocuments,
+    fetchDocTypes,
     fetchSingleDocument,
     navigateToDocument,
     navigateToDashboard,
     navigateToChat,
     navigateToProject,
+    generateAllDocuments,
+    uploadProjectToMcp,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
