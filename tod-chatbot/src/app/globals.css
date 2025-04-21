@@ -1,8 +1,9 @@
 @import "tailwindcss";
 /* @import "tw-animate-css"; */ /* Removed this unused import causing errors */
 
+/* Removed the entire @theme inline block as it might conflict with :root definitions in TW v4 */
+/* 
 @custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -42,6 +43,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
+*/
 
 @tailwind base;
 @tailwind components;
@@ -49,33 +51,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 3.9%; /* Almost black */
-    --foreground: 0 0% 98%; /* Almost white */
+    /* Define all colors using hsl() for potentially better TWv4/browser compatibility */
+    --background: hsl(0 0% 3.9%); 
+    --foreground: hsl(0 0% 98%); 
 
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: hsl(0 0% 3.9%);
+    --card-foreground: hsl(0 0% 98%);
  
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: hsl(0 0% 3.9%);
+    --popover-foreground: hsl(0 0% 98%);
  
-    --primary: 0 0% 98%; /* White for primary elements */
-    --primary-foreground: 0 0% 9%; /* Dark text on primary elements */
+    --primary: hsl(0 0% 98%);
+    --primary-foreground: hsl(0 0% 9%);
  
-    --secondary: 0 0% 14.9%; /* Dark gray */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: hsl(0 0% 14.9%);
+    --secondary-foreground: hsl(0 0% 98%);
  
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%; /* Lighter gray */
+    --muted: hsl(0 0% 14.9%);
+    --muted-foreground: hsl(0 0% 63.9%);
  
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: hsl(0 0% 14.9%);
+    --accent-foreground: hsl(0 0% 98%);
  
-    --destructive: 0 72% 51%; /* Keeping destructive color for potential errors */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: hsl(0 72% 51%);
+    --destructive-foreground: hsl(0 0% 98%);
 
-    --border: 0 0% 25%; /* Darker gray border */
-    --input: 0 0% 25%; /* Darker gray input border */
-    --ring: 0 0% 83.1%;
+    --border: hsl(0 0% 25%); 
+    --input: hsl(0 0% 25%);
+    --ring: hsl(0 0% 83.1%);
  
     --radius: 0.5rem;
   }
@@ -84,11 +87,15 @@
 }
  
 @layer base {
-  * {
+  /* Remove the problematic rule for the universal selector */
+  /* * { 
     @apply border-border;
-  }
+  } */
+  
   body {
-    @apply bg-background text-foreground;
+    /* Apply background and text colors directly using CSS variables */
+    background-color: var(--background);
+    color: var(--foreground);
     /* Add a subtle glow effect to all text */
     /* You can adjust the color (rgba(255, 255, 255, 0.5)) and spread (0 0 5px) */
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);

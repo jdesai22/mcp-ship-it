@@ -40,7 +40,21 @@ const saveDocumentation = (projectName: string, docType: string, content: string
 
 const loadTemplate = (templateName: string): string | null => {
   try {
-    const templatePath = path.join(templatesDir, `${templateName}.md`);
+    let fileName = '';
+    // Special case for Dependencies ID
+    if (templateName === 'Dependencies') {
+      fileName = 'dependencies-documentation-template.md';
+    } else {
+      // Convert CamelCase ID to kebab-case for other templates
+      const kebabCaseName = templateName
+        .replace(/([A-Z])/g, (match) => `-${match.toLowerCase()}`)
+        .replace(/^-/, ''); // Remove leading hyphen if first letter was uppercase
+      fileName = `${kebabCaseName}-template.md`;
+    }
+    
+    const templatePath = path.join(templatesDir, fileName);
+    console.log(`Attempting to load template: ${templatePath}`); // Log path
+
     if (fs.existsSync(templatePath)) {
       return fs.readFileSync(templatePath, 'utf8');
     }

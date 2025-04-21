@@ -49,8 +49,21 @@ const saveDocumentation = (projectName: string, docType: string, content: string
 // Helper function to load a template (adjust path as needed)
 const loadTemplate = (templateName: string): string | null => {
   try {
-    // Assuming templates are in a sibling directory `templates` relative to `tod-chatbot` parent
-    const templatePath = path.join(templatesDir, `${templateName}.md`); // Simple naming convention
+    let fileName = '';
+    // Special case for Dependencies ID
+    if (templateName === 'Dependencies') {
+      fileName = 'dependencies-documentation-template.md';
+    } else {
+      // Convert CamelCase ID to kebab-case for other templates
+      const kebabCaseName = templateName
+        .replace(/([A-Z])/g, (match) => `-${match.toLowerCase()}`)
+        .replace(/^-/, ''); // Remove leading hyphen if first letter was uppercase
+      fileName = `${kebabCaseName}-template.md`;
+    }
+
+    const templatePath = path.join(templatesDir, fileName);
+    console.log(`Attempting to load template: ${templatePath}`); // Log path
+
     if (fs.existsSync(templatePath)) {
       return fs.readFileSync(templatePath, 'utf8');
     }
