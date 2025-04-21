@@ -1,49 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@400;700&display=swap');
 @import "tailwindcss";
-/* @import "tw-animate-css"; */ /* Removed this unused import causing errors */
-
-/* Removed the entire @theme inline block as it might conflict with :root definitions in TW v4 */
-/* 
-@custom-variant dark (&:is(.dark *));
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-*/
 
 @tailwind base;
 @tailwind components;
@@ -51,74 +7,91 @@
 
 @layer base {
   :root {
-    /* Define all colors using hsl() for potentially better TWv4/browser compatibility */
-    --background: hsl(0 0% 3.9%); 
-    --foreground: hsl(0 0% 98%); 
+    /* Apple HIG Inspired Light Theme Palette */
+    --background: hsl(0 0% 100%); /* White */
+    --foreground: hsl(224 65% 33%); /* text: #1e3a8a */
 
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
+    --card: hsl(0 0% 100%); /* White */
+    --card-foreground: hsl(224 65% 33%); /* text: #1e3a8a */
  
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
+    --popover: hsl(0 0% 100%); /* White */
+    --popover-foreground: hsl(224 65% 33%); /* text: #1e3a8a */
  
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
+    --primary: hsl(212 100% 97%); /* primary: #eff6ff */
+    --primary-foreground: hsl(224 65% 33%); /* text: #1e3a8a */
  
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
+    --secondary: hsl(214 96% 87%); /* secondary: #bfdbfe */
+    --secondary-foreground: hsl(224 65% 33%); /* text: #1e3a8a */
  
-    --muted: hsl(0 0% 14.9%);
-    --muted-foreground: hsl(0 0% 63.9%);
+    --muted: hsl(210 14% 98%); /* Light gray, derived */
+    --muted-foreground: hsl(217 91% 60%); /* text secondary: #3b82f6 */
  
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
+    --accent: hsl(221 83% 53%); /* accent: #2563eb */
+    --accent-foreground: hsl(0 0% 100%); /* White for contrast */
  
-    --destructive: hsl(0 72% 51%);
-    --destructive-foreground: hsl(0 0% 98%);
+    --destructive: hsl(0 84% 60%); /* Standard red */
+    --destructive-foreground: hsl(0 0% 100%); /* White */
 
-    --border: hsl(0 0% 25%); 
-    --input: hsl(0 0% 25%);
-    --ring: hsl(0 0% 83.1%);
+    --border: hsl(217 91% 92%); /* Light blue-gray, derived */
+    --input: hsl(0 0% 100%); /* White */
+    --ring: hsl(221 83% 53%); /* accent: #2563eb */
  
     --radius: 0.5rem;
+
+    /* Typography */
+    --font-sans: 'Lato', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
   }
 
-  /* Removed the .dark class selector as this is the only theme */
+  .dark {
+    /* Apple HIG Inspired Dark Theme Palette */
+    --background: hsl(0 0% 0%); /* Black */
+    --foreground: hsl(0 0% 98%); /* Near White */
+
+    --card: hsl(0 0% 10%); /* Dark Gray */
+    --card-foreground: hsl(0 0% 98%); /* Near White */
+
+    --popover: hsl(0 0% 0%); /* Black */
+    --popover-foreground: hsl(0 0% 98%); /* Near White */
+
+    --primary: hsl(221 83% 53%); /* accent: #2563eb */
+    --primary-foreground: hsl(0 0% 100%); /* White */
+
+    --secondary: hsl(217 33% 27%); /* Darker Blue-Gray */
+    --secondary-foreground: hsl(0 0% 98%); /* Near White */
+
+    --muted: hsl(0 0% 15%); /* Dark Gray */
+    --muted-foreground: hsl(0 0% 63%); /* Lighter Gray */
+
+    --accent: hsl(221 83% 60%); /* Slightly lighter accent for dark mode */
+    --accent-foreground: hsl(0 0% 100%); /* White */
+
+    --destructive: hsl(0 72% 51%); /* Standard red */
+    --destructive-foreground: hsl(0 0% 98%); /* Near White */
+
+    --border: hsl(0 0% 20%); /* Dark Gray */
+    --input: hsl(0 0% 15%); /* Dark Gray */
+    --ring: hsl(221 83% 53%); /* accent: #2563eb */
+  }
+
+  /* Removed the .dark class selector */
 }
  
 @layer base {
-  /* Remove the problematic rule for the universal selector */
-  /* * { 
-    @apply border-border;
-  } */
+  /* Removed problematic universal selector */
   
   body {
-    /* Apply background and text colors directly using CSS variables */
-    background-color: var(--background);
-    color: var(--foreground);
-    /* Add a subtle glow effect to all text */
-    /* You can adjust the color (rgba(255, 255, 255, 0.5)) and spread (0 0 5px) */
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
-    font-family: 'Courier New', Courier, monospace; /* Classic mono font for CLI feel */
+    /* Apply base styles using CSS variables */
+    background-color: var(--background); /* Apply variable directly */
+    color: var(--foreground); /* Apply variable directly */
+    font-family: var(--font-sans); /* Use Lato for body */
+    /* Removed text-shadow and specific font */
+  }
+
+  /* Apply Poppins to headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
   }
 }
 
-/* Custom glow effect for interactive elements on hover/focus */
-@layer components {
-  .interactive-glow {
-    @apply transition-all duration-200 ease-in-out;
-  }
-  .interactive-glow:hover, .interactive-glow:focus {
-    /* Enhance glow on interaction */
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
-    /* Optional: slight scale or color change */
-    /* transform: scale(1.02); */
-    /* color: #aaffaa; */ /* Example: slight green tint */
-  }
-  .border-glow {
-     box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-  }
-   .border-glow-strong {
-     box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-  }
-}
+/* Removed custom glow effect classes */
