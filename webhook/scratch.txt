@@ -1,0 +1,1 @@
+ngrok http 3000 --domain=promptly-improved-buck.ngrok-free.app
