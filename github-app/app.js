@@ -27,6 +27,82 @@ const app = new App({
   },
 });
 
+/**
+ * Recursive function to get all files from a repository directory
+ * @param {object} octokit - The authenticated Octokit instance
+ * @param {string} owner - The repository owner
+ * @param {string} repo - The repository name
+ * @param {string} path - The path to scan (empty for root)
+ * @param {string} ref - The reference (branch, commit SHA)
+ * @returns {Promise<Array>} - List of file paths
+ */
+async function getFilesRecursively(octokit, owner, repo, path = '', ref) {
+  const files = [];
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner,
+      repo,
+      path,
+      ref,
+      headers: {
+        'x-github-api-version': '2022-11-28',
+      },
+    });
+
+    for (const item of response.data) {
+      if (item.type === 'file') {
+        files.push(item);
+      } else if (item.type === 'dir') {
+        const nestedFiles = await getFilesRecursively(octokit, owner, repo, item.path, ref);
+        files.push(...nestedFiles);
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching repository contents for ${path}: ${error.message}`);
+  }
+
+  return files;
+}
+
+/**
+ * Fetch the content of a file from GitHub
+ * @param {object} octokit - The authenticated Octokit instance
+ * @param {string} owner - The repository owner
+ * @param {string} repo - The repository name
+ * @param {string} path - The file path
+ * @param {string} ref - The reference (branch, commit SHA)
+ * @returns {Promise<string>} - File content as a string
+ */
+async function getFileContent(octokit, owner, repo, path, ref) {
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner,
+      repo,
+      path,
+      ref,
+      headers: {
+        'x-github-api-version': '2022-11-28',
+      },
+    });
+
+    // Check if content is available directly in the response
+    if (response.data.content && response.data.encoding === 'base64') {
+      return Buffer.from(response.data.content, 'base64').toString('utf8');
+    }
+    
+    // For larger files, we need to get the raw content using the download_url
+    if (response.data.download_url) {
+      const contentResponse = await fetch(response.data.download_url);
+      return await contentResponse.text();
+    }
+    
+    throw new Error('Could not retrieve file content - neither content nor download_url available');
+  } catch (error) {
+    throw new Error(`Error fetching content for ${path}: ${error.message}`);
+  }
+}
+
 // This defines the message that your app will post to push events
 async function handlePush({ octokit, payload }) {
     const owner = payload.repository.owner.name || payload.repository.owner.login;
@@ -35,6 +111,35 @@ async function handlePush({ octokit, payload }) {
     const commits = payload.commits;
   
     console.log(`Received a push event on ${ref} with ${commits.length} commit(s).`);
+    
+    // Get all files in the repository
+    console.log(`Scanning repository for .js and .html files...`);
+    const files = await getFilesRecursively(octokit, owner, repo, '', ref.replace('refs/heads/', ''));
+    
+    // Filter files to only include .js and .html extensions
+    const jsAndHtmlFiles = files.filter(file => {
+      const fileName = file.path.toLowerCase();
+      return fileName.endsWith('.js') || fileName.endsWith('.html');
+    });
+    
+    // Create a dictionary to store file contents
+    const fileContentsDict = {};
+    
+    // Fetch and store the content of each file
+    for (const file of jsAndHtmlFiles) {
+      try {
+        console.log(`Fetching content for ${file.path}...`);
+        const content = await getFileContent(octokit, owner, repo, file.path, ref.replace('refs/heads/', ''));
+        fileContentsDict[file.path] = content;
+      } catch (error) {
+        console.error(`Error processing ${file.path}: ${error.message}`);
+        fileContentsDict[file.path] = `Error: ${error.message}`;
+      }
+    }
+    
+    // Log the dictionary of file contents
+    console.log('Repository JS and HTML files:');
+    console.log(JSON.stringify(fileContentsDict, null, 2));
   
     for (const commit of commits) {
       const sha = commit.id;
@@ -72,16 +177,7 @@ async function handlePush({ octokit, payload }) {
         taskContent += `### ${modifiedFile}\n\n`;
         
         try {
-          const fileContent = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-            owner,
-            repo,
-            path: modifiedFile,
-            ref: sha,
-            headers: {
-              'x-github-api-version': '2022-11-28',
-            },
-          });
-          const content = Buffer.from(fileContent.data.content, 'base64').toString('utf8');
+          const content = await getFileContent(octokit, owner, repo, modifiedFile, sha);
           console.log(`Content of ${modifiedFile}:\n${content}`);
           
           taskContent += `\`\`\`\n${content}\n\`\`\`\n\n`;
