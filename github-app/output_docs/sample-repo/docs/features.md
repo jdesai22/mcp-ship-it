@@ -1,3 +1,4 @@
+```markdown
 # Feature Specifications - sample-repo
 
 **Last Updated:** 2024-04-27  
@@ -97,9 +98,3 @@ Further iteration may include detailed component documentation and configuration
 2. Document project dependencies and external integrations.
 3. Develop detailed user flow diagrams for enhanced comprehensibility.
 4. Incorporate accessibility and performance features in documentation.
-
----
-
-## Memory System Notes
-
-This document is integrated with the project's Memory Bank, ensuring updates reflect code changes and feature expansions. All future modifications should be logged accordingly to maintain consistency.

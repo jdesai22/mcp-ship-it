@@ -5,8 +5,11 @@ import {
   scanRepository, 
   createTaskDocument, 
   saveFileDictionary,
-  genTechnicalDocs 
+  genTechnicalDocs,
+  updateTechnicalDocs
 } from "./documentation-utils.js";
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Handle push webhook events
@@ -29,6 +32,13 @@ async function handlePush({ octokit, payload }) {
   // Flag to track if this is the first push to main branch
   const isFirstPushToMain = isMainBranch && !repoFolderExists;
   
+  // Check if docs folder exists
+  const docsFolder = path.join(repoFolder, 'docs');
+  const docsFolderExists = fs.existsSync(docsFolder);
+  
+  // Track modified files for this push
+  const modifiedFiles = [];
+  
   // If this is the first push to main branch, scan the whole repository
   if (isFirstPushToMain) {
     console.log(`First push to main branch for ${repo}. Scanning all repository files...`);
@@ -43,7 +53,7 @@ async function handlePush({ octokit, payload }) {
 
   // Process each commit in the push
   for (const commit of commits) {
-    await createTaskDocument(
+    const { validFileModified, modifiedFilesList } = await createTaskDocument(
       commit, 
       branch, 
       repoFolder, 
@@ -53,6 +63,12 @@ async function handlePush({ octokit, payload }) {
       isMainBranch, 
       fileContentsDict
     );
+    
+    // Add modified files from this commit to the list
+    if (modifiedFilesList && modifiedFilesList.length > 0) {
+      modifiedFiles.push(...modifiedFilesList);
+    }
+    
     console.log('---');
   }
   
@@ -74,6 +90,28 @@ async function handlePush({ octokit, payload }) {
       }
     } catch (error) {
       console.error('Error during technical documentation generation:', error);
+    }
+  } 
+  // If it's a push to main and docs folder already exists, update documentation
+  else if (isMainBranch && docsFolderExists && modifiedFiles.length > 0) {
+    console.log('Push to main detected with existing documentation. Checking for documentation updates...');
+    
+    try {
+      const updateResult = await updateTechnicalDocs(repo, octokit, owner, modifiedFiles, fileContentsDict);
+      
+      if (updateResult.success) {
+        console.log(`Technical documentation updated successfully.`);
+        if (updateResult.updatedFiles && updateResult.updatedFiles.length > 0) {
+          console.log(`Updated ${updateResult.updatedFiles.length} documentation file(s):`);
+          updateResult.updatedFiles.forEach(file => console.log(`- ${file}`));
+        } else {
+          console.log('No documentation changes were needed.');
+        }
+      } else {
+        console.error(`Failed to update technical documentation: ${updateResult.reason || updateResult.error}`);
+      }
+    } catch (error) {
+      console.error('Error during technical documentation update:', error);
     }
   }
 }

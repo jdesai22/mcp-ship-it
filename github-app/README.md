@@ -43,6 +43,8 @@ The project has been organized into modular components:
 - Generates detailed Markdown documentation for each commit
 - Creates a file dictionary for tracking file changes
 - Automatically generates comprehensive technical documentation on first push to main branch
+- Intelligently updates technical documentation on subsequent pushes to main branch
+- Uses AI to analyze code changes and update only the affected documentation sections
 - Supports multiple repositories
 - Handles large repositories by only scanning on the first push to the main branch
 
@@ -73,6 +75,22 @@ On the first push to the main branch, the app automatically generates comprehens
 - Project Structure
 
 Technical documentation is stored in the `output_docs/{repository}/docs` directory.
+
+### Documentation Updates
+
+On subsequent pushes to the main branch, the app:
+
+1. Detects which files have been modified
+2. Determines which documentation sections may need updates
+3. Uses AI to intelligently update only the affected documentation
+4. Updates the version history in each modified document
+5. Ensures the documentation stays in sync with the codebase
+
+The app uses a smart heuristic to determine which documentation to update based on the file types that were changed:
+- Code files (.js, .ts, etc.) → Update Implementation and Tech Stack docs
+- Configuration files (package.json, .env, etc.) → Update Dependencies and Tech Stack docs
+- UI files (.html, .css, etc.) → Update User Flow and Features docs
+- All changes → Always check Project Structure and Project Overview docs
 
 ## Environment Variables
 

@@ -189,6 +189,8 @@ ${modifiedFiles.map(file => `  - "${file}"`).join('\n')}
   
   // Track if any valid extension files were modified
   let validFileModified = false;
+  // Track the list of modified files for documentation updates
+  const modifiedFilesList = [];
   
   // Process only the modified files from this commit
   if (modifiedFiles.length > 0) {
@@ -212,6 +214,8 @@ ${modifiedFiles.map(file => `  - "${file}"`).join('\n')}
         
         if (isValidExtension) {
           validFileModified = true;
+          // Track this file for documentation updates
+          modifiedFilesList.push(modifiedFile);
           // Only update dictionary if on main branch
           if (isMainBranch) {
             console.log(`Updating dictionary with changes to ${modifiedFile}`);
@@ -232,7 +236,7 @@ ${modifiedFiles.map(file => `  - "${file}"`).join('\n')}
   fs.writeFileSync(taskFilename, taskContent);
   console.log(`Task documentation created: ${taskFilename}`);
   
-  return { validFileModified, fileContentsDict };
+  return { validFileModified, fileContentsDict, modifiedFilesList };
 }
 
 /**
@@ -488,11 +492,315 @@ function prepareRepoContext(fileContentsDict) {
   return context;
 }
 
+/**
+ * Update existing technical documentation based on modified files
+ * @param {string} repoName - Repository name
+ * @param {Object} octokit - Octokit instance 
+ * @param {string} owner - Repository owner
+ * @param {Array<string>} modifiedFiles - List of modified files
+ * @param {Object} fileContentsDict - File contents dictionary
+ * @returns {Promise<Object>} - Information about updated documentation
+ */
+async function updateTechnicalDocs(repoName, octokit, owner, modifiedFiles, fileContentsDict) {
+  try {
+    console.log(`Checking for technical documentation updates for ${repoName}...`);
+    
+    // Ensure we have a repo folder
+    const { repoFolder } = ensureOutputDirectories(repoName);
+    const docsFolder = path.join(repoFolder, 'docs');
+    
+    // Check if docs folder exists
+    if (!fs.existsSync(docsFolder)) {
+      console.error('Documentation folder not found. Cannot update documentation.');
+      return { success: false, reason: 'Documentation folder not found' };
+    }
+    
+    // Check if modified files is not empty
+    if (!modifiedFiles || modifiedFiles.length === 0) {
+      console.log('No files modified. No documentation update needed.');
+      return { success: true, updatedFiles: [] };
+    }
+    
+    // Filter out any non-existent files from the modifiedFiles array
+    const validModifiedFiles = modifiedFiles.filter(file => 
+      fileContentsDict[file] !== undefined
+    );
+    
+    if (validModifiedFiles.length === 0) {
+      console.log('No valid modified files found. No documentation update needed.');
+      return { success: true, updatedFiles: [] };
+    }
+    
+    // Load the meta-workflow template
+    const metaWorkflowTemplate = loadTemplate('meta-workflow-integration-template.md');
+    if (!metaWorkflowTemplate) {
+      console.error('Meta workflow template not found. Using default template structure.');
+    }
+    
+    // Read all existing documentation files
+    const existingDocs = {};
+    try {
+      const docFiles = fs.readdirSync(docsFolder).filter(file => 
+        file.endsWith('.md') && file !== 'index.md'
+      );
+      
+      for (const docFile of docFiles) {
+        try {
+          const docPath = path.join(docsFolder, docFile);
+          existingDocs[docFile] = fs.readFileSync(docPath, 'utf8');
+        } catch (error) {
+          console.error(`Error reading documentation file ${docFile}:`, error);
+          // Continue with other files
+        }
+      }
+      
+      if (Object.keys(existingDocs).length === 0) {
+        console.error('No existing documentation files found. Cannot update documentation.');
+        return { success: false, reason: 'No existing documentation files found' };
+      }
+    } catch (error) {
+      console.error('Error reading documentation files:', error);
+      return { success: false, error: `Error reading documentation files: ${error.message}` };
+    }
+    
+    // Prepare context with modified files
+    const modifiedFilesContext = prepareModifiedFilesContext(fileContentsDict, validModifiedFiles);
+    
+    // Create the system message with instructions for updating
+    const systemMessage = {
+      role: 'system',
+      content: `You are a technical documentation assistant that helps maintain comprehensive project documentation following the Windsurf Meta-Workflow methodology. 
+      
+Your task is to update the existing technical documentation based on changes to the repository's code and structure.
+
+Follow these guidelines:
+1. Examine the existing documentation carefully
+2. Identify any sections that need updating based on the modified files
+3. Make targeted updates to reflect the current state of the code
+4. Maintain the original structure and format of the documentation
+5. Update the version history table with the new changes
+6. Update the self-critique section as needed
+
+The Windsurf Meta-Workflow Template provides the structure to follow:
+
+${metaWorkflowTemplate ? metaWorkflowTemplate : "Template not available, use standard documentation structure."}
+
+Be conservative with your changes - only update sections that are directly affected by the code changes.
+Always maintain the "Memory Context" section, the "Version History" table, and the "Documentation Self-Critique" section.`
+    };
+    
+    const updatedFiles = [];
+    
+    // Determine which documentation types might need updating based on modified files
+    const docsToUpdate = determineDocsToUpdate(validModifiedFiles);
+    
+    // Update each relevant document type
+    for (const docType of docsToUpdate) {
+      if (!docType) continue; // Skip if the doc type is undefined
+      
+      console.log(`Checking if ${docType.name} documentation needs updating...`);
+      const filename = generateFilename(docType.id);
+      
+      // Skip if this document doesn't exist
+      if (!existingDocs[filename]) {
+        console.log(`${docType.name} documentation does not exist, skipping.`);
+        continue;
+      }
+      
+      // Create a specific message for updating this document type
+      const updateMessage = {
+        role: 'user',
+        content: `Please review and update the "${docType.name}" documentation for the repository named "${repoName}" based on recent code changes. 
+
+Here is the existing documentation:
+
+\`\`\`markdown
+${existingDocs[filename]}
+\`\`\`
+
+Here are the files that have been modified:
+
+${modifiedFilesContext}
+
+IMPORTANT: 
+1. Return the COMPLETE updated markdown content, not just the changes.
+2. Include appropriate updates to the Version History table.
+3. Only update sections that are affected by the code changes.
+4. If no updates are needed, simply return the existing documentation unchanged.
+5. Don't add any explanatory text outside the markdown content.`
+      };
+      
+      // Create message array for this document update
+      const updateMessages = [systemMessage, updateMessage];
+      
+      // Call OpenAI API
+      const modelName = process.env.MODEL_NAME || 'gpt-4.1-nano';
+      
+      try {
+        const completion = await openai.chat.completions.create({
+          messages: updateMessages,
+          model: modelName,
+          temperature: 0.7,
+          max_tokens: 4000,
+        });
+        
+        let updatedContent = completion.choices[0].message.content;
+        
+        // Clean the content
+        updatedContent = cleanGeneratedContent(updatedContent);
+        
+        // Compare to see if content has actually changed
+        if (updatedContent !== existingDocs[filename]) {
+          // Save the updated document
+          const filePath = saveDocumentation(docsFolder, filename, updatedContent);
+          updatedFiles.push(path.basename(filePath));
+          console.log(`Updated ${docType.name} documentation.`);
+        } else {
+          console.log(`No changes needed for ${docType.name} documentation.`);
+        }
+      } catch (error) {
+        console.error(`Error updating ${docType.name} documentation:`, error);
+        // Continue with other documents
+      }
+    }
+    
+    // Only update the index file if we updated any documents
+    if (updatedFiles.length > 0) {
+      try {
+        // Update timestamp in index.md
+        const indexPath = path.join(docsFolder, 'index.md');
+        if (fs.existsSync(indexPath)) {
+          let indexContent = fs.readFileSync(indexPath, 'utf8');
+          // Update the generation timestamp
+          indexContent = indexContent.replace(
+            /Generated on:.*$/m, 
+            `Generated on: ${new Date().toLocaleString()} (Last updated)`
+          );
+          fs.writeFileSync(indexPath, indexContent);
+          console.log(`Updated index.md with new timestamp.`);
+        }
+      } catch (error) {
+        console.error('Error updating index.md:', error);
+        // Continue with returning results
+      }
+    }
+    
+    console.log(`Technical documentation update check completed for ${repoName}.`);
+    return {
+      success: true,
+      updatedFiles: updatedFiles
+    };
+  } catch (error) {
+    console.error('Error updating technical documentation:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Prepare context specifically for modified files
+ * @param {Object} fileContentsDict - File contents dictionary
+ * @param {Array<string>} modifiedFiles - List of modified files
+ * @returns {string} - Formatted modified files context
+ */
+function prepareModifiedFilesContext(fileContentsDict, modifiedFiles) {
+  if (modifiedFiles.length === 0) {
+    return 'No files were modified.';
+  }
+  
+  let context = `The following ${modifiedFiles.length} files were modified:\n\n`;
+  
+  // Add modified file list
+  context += '## Modified Files\n\n';
+  modifiedFiles.forEach(filePath => {
+    context += `- ${filePath}\n`;
+  });
+  
+  // Add file contents of modified files
+  context += '\n## Modified File Contents\n\n';
+  modifiedFiles.forEach(filePath => {
+    if (fileContentsDict[filePath]) {
+      context += `### ${filePath}\n\n\`\`\`\n${fileContentsDict[filePath]}\n\`\`\`\n\n`;
+    } else {
+      context += `### ${filePath}\n\n*Content not available*\n\n`;
+    }
+  });
+  
+  return context;
+}
+
+/**
+ * Determine which documentation types might need updating based on modified files
+ * @param {Array<string>} modifiedFiles - List of modified files
+ * @returns {Array<Object>} - List of documentation types that might need updating
+ */
+function determineDocsToUpdate(modifiedFiles) {
+  // Basic heuristic - if specific types of files are modified, update specific docs
+  // This could be enhanced with more sophisticated rules
+  
+  const modifiedExtensions = new Set();
+  modifiedFiles.forEach(file => {
+    const ext = file.match(/\.([^.]+)$/);
+    if (ext) {
+      modifiedExtensions.add(ext[1].toLowerCase());
+    }
+  });
+  
+  const modifiedFilenames = modifiedFiles.map(file => file.toLowerCase());
+  
+  // Always include ProjectStructure and ProjectOverview in updates
+  const docsToUpdate = [
+    documentationTypes.find(d => d.id === 'ProjectStructure'),
+    documentationTypes.find(d => d.id === 'ProjectOverview')
+  ];
+  
+  // Check for implementation files
+  const hasCodeFiles = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'rb', 'go', 'c', 'cpp', 'php'].some(ext => 
+    modifiedExtensions.has(ext)
+  );
+  if (hasCodeFiles) {
+    docsToUpdate.push(
+      documentationTypes.find(d => d.id === 'Implementation'),
+      documentationTypes.find(d => d.id === 'TechStack')
+    );
+  }
+  
+  // Check for configuration files
+  const hasConfigFiles = modifiedFilenames.some(file => 
+    file.includes('package.json') || 
+    file.includes('config') || 
+    file.includes('.env') ||
+    file.includes('.yml') ||
+    file.includes('.yaml') ||
+    file.includes('requirements.txt')
+  );
+  if (hasConfigFiles) {
+    docsToUpdate.push(
+      documentationTypes.find(d => d.id === 'Dependencies'),
+      documentationTypes.find(d => d.id === 'TechStack')
+    );
+  }
+  
+  // Check for UI files
+  const hasUIFiles = ['html', 'css', 'scss', 'jsx', 'tsx'].some(ext => 
+    modifiedExtensions.has(ext)
+  );
+  if (hasUIFiles) {
+    docsToUpdate.push(
+      documentationTypes.find(d => d.id === 'UserFlow'),
+      documentationTypes.find(d => d.id === 'Features')
+    );
+  }
+  
+  // Return unique documentation types (remove duplicates and nulls)
+  return [...new Set(docsToUpdate.filter(Boolean))];
+}
+
 export {
   ensureOutputDirectories,
   loadFileDictionary,
   scanRepository,
   createTaskDocument,
   saveFileDictionary,
-  genTechnicalDocs
+  genTechnicalDocs,
+  updateTechnicalDocs
 }; 
