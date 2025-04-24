@@ -25,6 +25,7 @@ The project has been organized into modular components:
    MODEL_NAME=gpt-4.1-nano
    TEMPLATES_DIR=../templates
    VALID_FILE_EXTENSIONS=.js,.html,.css,.md,.json
+   OUTPUT_DIR=../output-docs
    ```
 
 2. Install dependencies:
@@ -59,7 +60,7 @@ For each commit, the app generates a Markdown file with:
 - Full commit message
 - List of modified files with their contents
 
-Documentation is stored in the `output_docs/{repository}` directory.
+Documentation is stored in the `output-docs/{repository}` directory (at the project root level).
 
 ### Technical Documentation
 
@@ -74,7 +75,7 @@ On the first push to the main branch, the app automatically generates comprehens
 - Implementation Standards
 - Project Structure
 
-Technical documentation is stored in the `output_docs/{repository}/docs` directory.
+Technical documentation is stored in the `output-docs/{repository}/docs` directory.
 
 ### Documentation Updates
 
@@ -102,6 +103,7 @@ The app uses a smart heuristic to determine which documentation to update based 
 - `MODEL_NAME`: OpenAI model to use (default: gpt-4.1-nano)
 - `TEMPLATES_DIR`: Path to templates directory (default: ../templates)
 - `VALID_FILE_EXTENSIONS`: Comma-separated list of file extensions to track (default: .js,.html,.css,.md,.json)
+- `OUTPUT_DIR`: Path to the output directory (default: ../output-docs)
 
 ## License
 

@@ -9,7 +9,7 @@ const openai = new OpenAI({
 });
 
 // Define the output directory relative to the project root
-const outputDir = path.resolve(process.cwd(), 'output-docs');
+const outputDir = path.resolve(process.cwd(), '..', 'output-docs');
 const templatesDir = path.resolve(process.cwd(), '..', 'templates'); // Assuming templates live outside tod-chatbot for now
 
 // Helper function to ensure project directory exists

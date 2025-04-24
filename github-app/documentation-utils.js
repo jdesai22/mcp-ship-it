@@ -1,5 +1,5 @@
 import fs from "fs";
-import { validFileExtensions, templatesDir } from "./config.js";
+import { validFileExtensions, templatesDir, outputDir } from "./config.js";
 import { getFilesRecursively, getFileContent } from "./github-utils.js";
 import path from "path";
 import OpenAI from "openai";
@@ -31,13 +31,14 @@ const documentationTypes = [
  * @returns {Object} - Information about repo directory
  */
 function ensureOutputDirectories(repoName) {
-  // Create output_docs directory if it doesn't exist
-  if (!fs.existsSync('./output_docs')) {
-    fs.mkdirSync('./output_docs', { recursive: true });
+  // Create output-docs directory if it doesn't exist
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+    console.log(`Created output directory: ${outputDir}`);
   }
   
-  // Check if repository folder exists in output_docs
-  const repoFolder = `./output_docs/${repoName}`;
+  // Check if repository folder exists in output-docs
+  const repoFolder = path.join(outputDir, repoName);
   const repoFolderExists = fs.existsSync(repoFolder);
   
   // Create repo folder if it doesn't exist

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Define the output directory relative to the project root
-const outputDir = path.resolve(process.cwd(), 'output-docs');
+const outputDir = path.resolve(process.cwd(), '..', 'output-docs');
 
 // Helper to sanitize project name for directory path
 const sanitizeProjectName = (name: string): string => {

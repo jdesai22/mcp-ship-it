@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 
 // Define the output directory relative to the project root
-// Assumes CWD is the project root when the server runs
-const outputDir = path.resolve(process.cwd(), 'output-docs');
+// Updating path to use the parent directory's output-docs folder
+const outputDir = path.resolve(process.cwd(), '..', 'output-docs');
 
 // Recursive function to get all markdown documents
 function getAllDocuments(dir: string, baseDir: string): any[] {
@@ -35,21 +35,26 @@ function getAllDocuments(dir: string, baseDir: string): any[] {
           documents.push(...subdirDocs);
         } else if (file.endsWith('.md')) {
           const relativePath = path.relative(baseDir, filePath);
-          const folderName = path.dirname(relativePath) === '.' ? null : path.dirname(relativePath);
+          const folderPath = path.dirname(relativePath) === '.' ? null : path.dirname(relativePath);
+          
+          // Extract the top-level project name from the folder path
+          // For example, from "sample-repo/docs" extract "sample-repo"
+          const projectName = folderPath ? folderPath.split('/')[0] : 'unknown';
+          
           const creationTime = stat.birthtime || stat.mtime;
 
           // Basic parsing - filename without extension as ID and type
           let documentType = file.replace('.md', '');
-          const projectName = folderName || 'unknown';
 
           documents.push({
             id: relativePath.replace(/\\/g, '/').replace('.md', ''), // Use forward slash and remove .md
             fileName: relativePath.replace(/\\/g, '/'), // Use forward slash
             documentType: documentType,
-            projectName: projectName,
+            projectName: projectName, // This is now the top-level folder name
             createdAt: creationTime.toISOString(),
             content: null, // Content loaded on demand
-            folder: folderName?.replace(/\\/g, '/') // Use forward slash
+            folder: folderPath?.replace(/\\/g, '/'), // The full folder path with forward slash
+            isNestedFolder: folderPath ? folderPath.includes('/') : false // Flag to indicate if it's in a subfolder
           });
         }
       } catch (error) {

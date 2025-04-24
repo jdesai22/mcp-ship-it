@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import fs from "fs";
+import path from "path";
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,9 @@ if (process.env.VALID_FILE_EXTENSIONS) {
 // Templates directory path (relative to project root)
 const templatesDir = process.env.TEMPLATES_DIR || '../templates';
 
+// Output directory path (using environment variable or default to ../output-docs)
+const outputDir = process.env.OUTPUT_DIR || path.join(process.cwd(), '..', 'output-docs');
+
 // Server configuration
 const port = 3000;
 const host = 'localhost';
@@ -37,6 +41,7 @@ export {
   mainBranch,
   validFileExtensions,
   templatesDir,
+  outputDir,
   port,
   host,
   path,
